@@ -8,7 +8,7 @@
     var args;
 
     args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    return typeof qp._log === "function" ? qp._log(args) : void 0;
+    return typeof qp._log === "function" ? qp._log.apply(qp, [document.title].concat(__slice.call(args))) : void 0;
   };
 
 }).call(this);

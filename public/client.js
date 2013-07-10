@@ -6,8 +6,17 @@
     return console.log(klynge);
   };
 
-  search = function(query) {
+  search = function() {
+    var query;
+
+    query = ($("#query")).css({
+      display: "none"
+    }).val();
+    qp.log("search", query);
     return $.get("search/" + query, function(result) {
+      ($("#query")).css({
+        display: "inline"
+      }).val("");
       return result.map(function(faust) {
         return $.get("faust/" + faust, function(faust) {
           if (faust != null ? faust.klynge : void 0) {
@@ -22,8 +31,9 @@
   };
 
   $(function() {
-    return ($("#search")).on("touchstart mousedown", function() {
-      return search(($("#query")).val());
+    return ($("#search")).on("submit", function() {
+      search();
+      return false;
     });
   });
 

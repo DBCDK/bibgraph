@@ -1,8 +1,15 @@
 addKlynge = (klynge) ->
   console.log klynge
 
-search = (query) ->
+search = () ->
+  query = ($ "#query")
+    .css({display: "none"})
+    .val()
+  qp.log "search", query
   $.get "search/" + query, (result) ->
+    ($ "#query")
+      .css({display: "inline"})
+      .val("")
     result.map (faust) ->
       $.get "faust/" + faust, (faust) ->
         if faust?.klynge
@@ -11,5 +18,6 @@ search = (query) ->
             addKlynge klynge
 
 $ ->
-  ($ "#search").on "touchstart mousedown", ->
-    search ($ "#query").val()
+  ($ "#search").on "submit", ->
+    search()
+    false
