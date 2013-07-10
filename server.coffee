@@ -18,7 +18,11 @@ klynge = (id, cb) ->
   db.get "klynge:" + id, (err, data) -> cb err, JSON.parse data
 
 search = (query, cb) ->
-  bibdkSearch query, cb
+  db.get "search:" + query, (err, result) ->
+    return cb err, JSON.parse result if not err
+    bibdkSearch query, (err, result) ->
+      cb err, result
+      db.put "search:" + query, JSON.stringify result
 
 # Scrape bibliotek.dk {{{1
 request = require "request"
