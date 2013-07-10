@@ -1,10 +1,26 @@
-addKlynge = (klynge) ->
-  console.log klynge
+klynger = []
+
+$graph = undefined
+
+update = ->
+  $graph.empty()
+  klynger = klynger.filter (klynge) -> klynge.adhl
+  for klynge in klynger
+    $graph.append "<div>#{klynge.title} #{klynge.adhl[0][1]}</div>"
+
+requestKlynge = (klynge) ->
+  $.get "klynge/" + klynge, (klynge) ->
+    klynger.push klynge
+    $.get "faust/" + klynge.faust[0], (faust) ->
+      klynge.title = faust.title
+      update()
+      console.log klynge
 
 search = () ->
   query = ($ "#query")
     .css({display: "none"})
     .val()
+  klynger = []
   qp.log "search", query
   $.get "search/" + query, (result) ->
     ($ "#query")
@@ -12,12 +28,10 @@ search = () ->
       .val("")
     result.map (faust) ->
       $.get "faust/" + faust, (faust) ->
-        if faust?.klynge
-          $.get "klynge/" + faust?.klynge, (klynge) ->
-            klynge.title = faust.title
-            addKlynge klynge
+        requestKlynge faust?.klynge if faust?.klynge
 
 $ ->
+  $graph = $ "#graph"
   ($ "#search").on "submit", ->
     search()
     false
