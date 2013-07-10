@@ -51,7 +51,7 @@ jsonp = (fn) -> (req, res) ->
 app.all "/faust/:val", jsonp faust
 app.all "/klynge/:val", jsonp klynge
 app.all "/search/:val", jsonp search
-app.get "/", express.static "public"
+app.use "/", express.static "public"
 
 app.listen "1234"
 console.log "listening on localhost:1234"
