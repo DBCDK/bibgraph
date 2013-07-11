@@ -32,7 +32,7 @@ bibdkTitle = (faust, cb) ->
     re = /<span id="linkSign-item1"[^<]*<.span..nbsp.([^<]*)/
     cb err, (body.match re)[1]
 
-resultCount = 5
+resultCount = 10
 bibdkSearch = (query, cb) ->
   request "http://bibliotek.dk/vis.php?term1=#{query}&step=#{resultCount}", (err, res, body) ->
     return cb err if err

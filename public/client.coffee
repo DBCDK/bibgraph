@@ -20,6 +20,7 @@ search = () ->
   query = ($ "#query")
     .css({display: "none"})
     .val()
+  location.hash = query
   klynger = []
   qp.log "search", query
   $.get "search/" + query, (result) ->

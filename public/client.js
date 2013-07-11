@@ -38,6 +38,7 @@
     query = ($("#query")).css({
       display: "none"
     }).val();
+    location.hash = query;
     klynger = [];
     qp.log("search", query);
     return $.get("search/" + query, function(result) {
