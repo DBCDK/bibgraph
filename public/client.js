@@ -56,10 +56,14 @@
 
   $(function() {
     $graph = $("#graph");
-    return ($("#search")).on("submit", function() {
+    ($("#search")).on("submit", function() {
       search();
       return false;
     });
+    if (location.hash) {
+      ($("#query")).val(location.hash.slice(1));
+      return search();
+    }
   });
 
 }).call(this);

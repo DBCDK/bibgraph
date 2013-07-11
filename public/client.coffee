@@ -35,3 +35,6 @@ $ ->
   ($ "#search").on "submit", ->
     search()
     false
+  if location.hash
+    ($ "#query").val location.hash.slice(1)
+    search()
