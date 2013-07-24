@@ -37,9 +37,6 @@ addAdhlMeta = (done) ->
     val = JSON.parse data.value
     if val.adhl and Array.isArray val.adhl[0]
       stream.pause()
-      val.klynge = val.adhl[0][0]
-      val.count = val.adhl[0][1]
-      val.adhl = val.adhl.slice(1)
       async.map(val.adhl,
         (elem, done) ->
           db.get "klynge:" + elem[0], (err, data) ->
