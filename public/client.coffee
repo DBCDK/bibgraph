@@ -1,12 +1,41 @@
 # Graph management {{{1
 klynger = []
 
-reset = -> undefined
-start = -> undefined
+reset = ->
+  window.klynger = klynger = []
+
+start = ->
+  expand() if klynger.length
+  update()
+
+
+expand = ->
+  return if klynger.length > 4
+  for i in [0..10]
+    klynge = klynger[Math.random()*klynger.length | 0]
+    for child in klynge.adhl
+      if !existing[child.klynge]
+        console.log existing, child.klynge
+        return requestKlynge child.klynge, expand
+
+expand = ->
+  return if klynger.length > 4
+
+  existing = {}
+  for klynge in klynger
+    existing[klynge.klynge] = true
+
+  klynge = klynger[Math.random()*klynger.length | 0]
+  for child in klynge.adhl
+    if !existing[child.klynge]
+      console.log "found", existing, child, JSON.stringify klynger.map (k) -> k.klynge
+      return requestKlynge child.klynge, expand
 
 # Add a klynge to the klynge-list, loading it from the api {{{2
-requestKlynge = (klynge, done) ->
-  $.get "klynge/" + klynge, (klynge) ->
+requestKlynge = (klyngeId, done) ->
+  $.get "klynge/" + klyngeId, (klynge) ->
+    console.log klyngeId, klynge
+    return done?() if not klynge.faust
     klynger.push klynge
     $.get "faust/" + klynge.faust[0], (faust) ->
       klynge.title = faust.title
@@ -17,11 +46,12 @@ requestKlynge = (klynge, done) ->
 # Update the view on graph change
 $graph = undefined
 $ -> $graph = $ "#graph"
+
 update = ->
   $graph.empty()
   klynger = klynger.filter (klynge) -> klynge.adhl
   for klynge in klynger
-    $graph.append "<div>#{klynge.title} #{klynge.adhl[0][1]}</div>"
+    $graph.append "<span> &nbsp; #{klynge.title} #{klynge.count}</span>"
 
 # Search {{{1
 search = () ->
@@ -49,12 +79,13 @@ search = () ->
 
       # Discard all but the most popular result
       , ->
-        max = {adhl:[[0,0]]}
+        max = {count: 0}
         for klynge in klynger
-          if max.adhl[0][1] <= klynge.adhl[0][1]
+          if max.count <= klynge.count
             max = klynge
         klynger = [max]
-        update()
+        console.log "root:", max
+        start()
 
 
 # Handle seach request and location.hash {{{1
