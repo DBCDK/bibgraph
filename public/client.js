@@ -24,7 +24,7 @@
     }
     for (_j = 0, _len = klynger.length; _j < _len; _j++) {
       klynge = klynger[_j];
-      klynge.label = klynge.title.replace("&amp;", "&").replace(/&#([0-9]*);/g, function(_, n) {
+      klynge.label = String(klynge.title).replace("&amp;", "&").replace(/&#([0-9]*);/g, function(_, n) {
         return String.fromCharCode(n);
       });
     }

@@ -20,7 +20,7 @@ draw = ->
     klynger[i].index = i
 
   for klynge in klynger
-    klynge.label = klynge.title.replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
+    klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
 
   idx = {}
   idx[klynge.klynge] = klynge.index for klynge in klynger
