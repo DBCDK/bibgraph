@@ -1,7 +1,6 @@
 nNodes = 100
 edgeTry = 10
-klynger = []
-divWidth = 60
+boxSize = 60
 
 # Util to be merged into qp{{{1
 
@@ -17,16 +16,17 @@ qp.strhash = (s) ->
 qp.intToColor = (i) -> "#" + ((i & 0xffffff) + 0x1000000).toString(16).slice(1)
 qp.hashColorLight = (s) -> qp.intToColor 0xe0e0e0 | qp.prng 1 + qp.strhash s
 qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strhash s
+qp.log = (args...) -> qp._log? document.title, args...
 
-# PopUp Menu {{{1
-
+# Drag and popUp Menu {{{1
+# State {{{2
 movingKlynge = undefined
 movingX = 0
 movingY = 0
 movingX0 = 0
 movingY0 = 0
 
-addMenu = ($elem, klynge) ->
+addMenu = ($elem, klynge) -> #{{{2
   elem = $elem[0]
   # TODO functions below should not be defined in the closure
   elem.addEventListener "mousedown", (e) ->
@@ -39,34 +39,38 @@ addMenu = ($elem, klynge) ->
     showMenuItems()
     true
 
-stopMoving  = (e) ->
+stopMoving  = (e) -> #{{{2
   e.preventDefault()
   movingKlynge.fixed = movingKlynge.pinned if movingKlynge
   movingKlynge = undefined
   true
-movingMouseMove = (e) ->
-    return if not movingKlynge
-    klynge = movingKlynge
-    e.preventDefault()
-    dx = e.x - movingX
-    dy = e.y - movingY
-    klynge.x += dx
-    klynge.y += dy
-    klynge.px += dx
-    klynge.py += dy
-    movingX += dx
-    movingY += dy
-    force.start()
-    true
 
-$ ->
+movingMouseMove = (e) -> #{{{2
+  return if not movingKlynge
+  klynge = movingKlynge
+  e.preventDefault()
+  dx = e.x - movingX
+  dy = e.y - movingY
+  klynge.x += dx
+  klynge.y += dy
+  klynge.px += dx
+  klynge.py += dy
+  movingX += dx
+  movingY += dy
+  force.start()
+  true
+
+$ -> # Bind events {{{2
   window.addEventListener "mousemove", movingMouseMove
   window.addEventListener "mouseup", stopMoving
   window.addEventListener "mouseleave", stopMoving
 
-
 # Draw graph {{{1
 #
+ctx = undefined
+canvas = undefined
+klynger = []
+edges = []
 draw = ->
   klynger = klynger.reverse()
   w = window.innerWidth
@@ -77,7 +81,6 @@ draw = ->
   svg = d3.select("#graph").append("svg")
   svg.attr("width", w)
   svg.attr("height", h)
-
 
   for i in [0..klynger.length - 1] #{{{2
     klynger[i].index = i
@@ -116,7 +119,7 @@ draw = ->
     $div.data "klynge", klynge
     $div.css
       position: "absolute"
-      width: divWidth
+      width: boxSize
       font: "100px sans serif"
       textAlign: "center"
       #border: "1px solid rgba(0,0,0,0.3)"
@@ -133,28 +136,16 @@ draw = ->
     $("body").append $div
     size = 12
     addMenu $div, klynge
-    while $div.height() > divWidth and size > 8
+    while $div.height() > boxSize and size > 8
       --size
       $div.css {fontSize: size}
-    $div.css {height: divWidth}
+    $div.css {height: boxSize}
     klynge.div = $div[0]
 
   n = 0
-  updateForce = -> #{{{2
-    for klynge in klynger
-      klynge.div.style.top = (klynge.y-divWidth/2) + "px"
-      klynge.div.style.left = (klynge.x - divWidth/2) + "px"
-
-    ctx.lineWidth = 0.3
-    ctx.clearRect 0,0,w,h
-    ctx.beginPath()
-    for edge in edges
-      ctx.moveTo edge.source.x, edge.source.y
-      ctx.lineTo edge.target.x, edge.target.y
-    ctx.stroke()
 
   force.size [w, h]
-  force.on "tick", -> updateForce()
+  force.on "tick", updateForce
   force.nodes klynger
   force.links edges
   force.charge -400
@@ -163,6 +154,18 @@ draw = ->
   force.gravity 0.1
   force.start()
 
+updateForce = -> #{{{2
+  for klynge in klynger
+    klynge.div.style.top = (klynge.y - boxSize/2) + "px"
+    klynge.div.style.left = (klynge.x - boxSize/2) + "px"
+
+  ctx.lineWidth = 0.3
+  ctx.clearRect 0, 0, canvas.width, canvas.height
+  ctx.beginPath()
+  for edge in edges
+    ctx.moveTo edge.source.x, edge.source.y
+    ctx.lineTo edge.target.x, edge.target.y
+  ctx.stroke()
 
 
 # Graph management {{{1
@@ -221,7 +224,9 @@ update = ->
   for klynge in klynger
     $graph.append "<span> &nbsp; #{klynge.title} #{klynge.count}</span>"
 
-# Search {{{1
+# Main - to be replaced with better embedding when going public {{{1
+
+# Search {{{2
 search = () ->
   reset()
   query = ($ "#query")
@@ -258,7 +263,7 @@ search = () ->
           console.log "done"
 
 
-# Handle seach request and location.hash {{{1
+# Handle seach request and location.hash {{{2
 $ ->
   ($ "#search").on "submit", ->
     search()
