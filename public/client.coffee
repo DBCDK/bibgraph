@@ -1,6 +1,24 @@
-nNodes = 70
-edgeTry = 6
+nNodes = 100
+edgeTry = 20
 klynger = []
+divWidth = 60
+
+# Util to be merged into qp{{{1
+
+qp = window.qp || {}
+qp.prngSeed = Date.now()
+qp.prng = (n) -> qp.prngSeed = (1664525 * (if n == undefined then qp.prngSeed else n) + 1013904223) |0
+qp.strhash = (s) ->
+  hash = 5381
+  i = s.length
+  while i
+    hash = (hash*31 + s.charCodeAt(--i)) | 0 
+  hash
+qp.intToColor = (i) -> "#" + ((i & 0xffffff) + 0x1000000).toString(16).slice(1)
+qp.hashColorLight = (s) -> qp.intToColor 0xe0e0e0 | qp.prng 1 + qp.strhash s
+qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strhash s
+
+
 
 # Draw graph {{{1
 #
@@ -21,6 +39,7 @@ draw = ->
 
   for klynge in klynger
     klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
+    klynge.label = ""
 
   idx = {}
   idx[klynge.klynge] = klynge.index for klynge in klynger
@@ -54,13 +73,43 @@ draw = ->
             .attr("class", "node")
             .call(force.drag)
 
+  for klynge in klynger
+    klynge.title = "" + klynge.title
+    $div = $ "<div>" + klynge.title + "</div>"
+    $div.css
+      position: "absolute"
+      width: divWidth
+      font: "100px sans serif"
+      textAlign: "center"
+      #border: "1px solid rgba(0,0,0,0.3)"
+      color: qp.hashColorDark klynge.title
+      background: qp.hashColorLight klynge.title
+      hyphens: "auto"
+      MozHyphens: "auto"
+      WebkitHyphens: "auto"
+      overflow: "hidden"
+      boxShadow: "3px 3px 8px rgba(0, 0, 0, 0.5)"
+      padding: 4
+      borderRadius: 4
+    $("body").append $div
+    size = 12
+    while $div.height() > divWidth and size > 8
+      --size
+      $div.css {fontSize: size}
+    $div.css {height: divWidth}
+    klynge.div = $div[0]
+
+  n = 0
   updateForce = -> #{{{2
-            link.attr("x1", (d) -> d.source.x)
+    for klynge in klynger
+      klynge.div.style.top = klynge.y + "px"
+      klynge.div.style.left = (klynge.x - divWidth/2) + "px"
+    link.attr("x1", (d) -> d.source.x)
                 .attr("y1", (d) -> d.source.y)
                 .attr("x2", (d) -> d.target.x)
                 .attr("y2", (d) -> d.target.y)
 
-            node
+    node
                 .attr("x", (d) -> d.x)
                 .attr("y", (d) -> d.y + 2)
                 .text((d) -> d.label or d._id)
@@ -70,8 +119,8 @@ draw = ->
   force.on "tick", -> updateForce()
   force.nodes klynger
   force.links edges
-  force.charge -120
-  force.linkDistance 100
+  force.charge -800
+  force.linkDistance 150
   force.linkStrength 0.3
   force.gravity 0.1
   force.start()
@@ -89,11 +138,9 @@ start = (done)->
   expand done if klynger.length
   update()
 
-prng = (n) -> (1664525*n + 1013904223) |0
-
 _pickN = 0
 pick = (arr) ->
-  _pickN = prng _pickN
+  _pickN = qp.prng _pickN
   arr[(_pickN&0x7fffffff) % arr.length]
 
 

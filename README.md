@@ -4,6 +4,32 @@ Visualisations of related books, based on the ADHL-data
 
 Work in progress
 
+# Roadmap
+
+- dragable books
+- clickable books with popup-menu
+    - increase number of links by 3
+    - pin it
+    - decrease number of links by 3
+    - link to bibliotek.dk
+    - close visualisation
+- refactor/documentation
+- embeddable code
+- better line drawing
+- weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up
+- traversal not random, but 6-3-3 or something similar initially
+
+# Running:
+
+Requires copy of the data `adhl.json` to run. (`adhl.json` contains one json per line, either `["faust", faust, klynge]` mapping between faust numbers and klynger, or `["adhl", klynge1, [[klynge1, count], [klynge2, count], ...]]` with the number of coloans for each klynge.
+
+To load up the database run:
+
+    python importdata.py
+    coffee updateData.coffee
+
+and then just run `coffee server.coffee` to which makes the http-server run on `localhost:1234`.
+
 # Internal details
 
 ## REST API
