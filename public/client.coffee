@@ -1,5 +1,5 @@
 nNodes = 100
-edgeTry = 20
+edgeTry = 10
 klynger = []
 divWidth = 60
 
@@ -122,11 +122,12 @@ draw = ->
       #border: "1px solid rgba(0,0,0,0.3)"
       color: qp.hashColorDark klynge.title
       background: qp.hashColorLight klynge.title
+      background: "rgba(255,255,255,0.75)"
       hyphens: "auto"
       MozHyphens: "auto"
       WebkitHyphens: "auto"
       overflow: "hidden"
-      boxShadow: "3px 3px 8px rgba(0, 0, 0, 0.5)"
+      boxShadow: "1px 1px 4px rgba(0, 0, 0, 0.5)"
       padding: 4
       borderRadius: 4
     $("body").append $div
@@ -245,15 +246,7 @@ search = () ->
             done()
 
       # ÷÷÷÷Discard all but the most popular result
-      # ÷÷÷÷Discard all but first result
       , ->
-        return start ->
-          draw()
-
-        klynger = klynger.slice 0, 1
-        return start ->
-          draw()
-
         max = {count: 0}
         for klynge in klynger
           if max.count <= klynge.count
@@ -261,6 +254,7 @@ search = () ->
         klynger = [max]
         console.log "root:", max
         start ->
+          draw()
           console.log "done"
 
 

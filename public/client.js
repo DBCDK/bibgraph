@@ -4,7 +4,7 @@
 
   nNodes = 100;
 
-  edgeTry = 20;
+  edgeTry = 10;
 
   klynger = [];
 
@@ -169,11 +169,12 @@
         textAlign: "center",
         color: qp.hashColorDark(klynge.title),
         background: qp.hashColorLight(klynge.title),
+        background: "rgba(255,255,255,0.75)",
         hyphens: "auto",
         MozHyphens: "auto",
         WebkitHyphens: "auto",
         overflow: "hidden",
-        boxShadow: "3px 3px 8px rgba(0, 0, 0, 0.5)",
+        boxShadow: "1px 1px 4px rgba(0, 0, 0, 0.5)",
         padding: 4,
         borderRadius: 4
       });
@@ -340,13 +341,6 @@
       }, function() {
         var klynge, max, _i, _len;
 
-        return start(function() {
-          return draw();
-        });
-        klynger = klynger.slice(0, 1);
-        return start(function() {
-          return draw();
-        });
         max = {
           count: 0
         };
@@ -359,6 +353,7 @@
         klynger = [max];
         console.log("root:", max);
         return start(function() {
+          draw();
           return console.log("done");
         });
       });
