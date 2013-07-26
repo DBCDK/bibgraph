@@ -56,7 +56,6 @@ movingMouseMove = (e) ->
     klynge.py += dy
     movingX += dx
     movingY += dy
-    console.log klynge.x, klynge.px, movingX
     force.start()
     true
 
@@ -98,26 +97,18 @@ draw = ->
           source: a.index
           target: idx[b.klynge]
 
-
-  link = svg #{{{2
-            .selectAll(".link")
-            .data(edges)
-            .enter()
-            .append("line")
-            .attr("class", "link")
-            .style("stroke", "#999")
-            .style("stroke-width", 1)
-
-  node = svg #{{{2
-            .selectAll(".node")
-            .data(klynger)
-            .enter()
-            .append("text")
-            .style("font", "12px sans-serif")
-            .style("text-anchor", "middle")
-            .style("text-shadow", "1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white")
-            .attr("class", "node")
-            .call(force.drag)
+  $canvas = $ "<canvas></canvas>"
+  $("body").append $canvas
+  canvas = $canvas[0]
+  ctx = canvas.getContext "2d"
+  ctx.width = canvas.width = w
+  ctx.height = canvas.height = h
+  $canvas.css
+    position: "absolute"
+    top: 0
+    left: 0
+    width: w
+    height: h
 
   for klynge in klynger
     klynge.title = "" + klynge.title
@@ -150,25 +141,23 @@ draw = ->
   n = 0
   updateForce = -> #{{{2
     for klynge in klynger
-      klynge.div.style.top = klynge.y + "px"
+      klynge.div.style.top = (klynge.y-divWidth/2) + "px"
       klynge.div.style.left = (klynge.x - divWidth/2) + "px"
-    link.attr("x1", (d) -> d.source.x)
-                .attr("y1", (d) -> d.source.y)
-                .attr("x2", (d) -> d.target.x)
-                .attr("y2", (d) -> d.target.y)
 
-    node
-                .attr("x", (d) -> d.x)
-                .attr("y", (d) -> d.y + 2)
-                .text((d) -> d.label or d._id)
-
+    ctx.lineWidth = 0.3
+    ctx.clearRect 0,0,w,h
+    ctx.beginPath()
+    for edge in edges
+      ctx.moveTo edge.source.x, edge.source.y
+      ctx.lineTo edge.target.x, edge.target.y
+    ctx.stroke()
 
   force.size [w, h]
   force.on "tick", -> updateForce()
   force.nodes klynger
   force.links edges
   force.charge -400
-  force.linkDistance 120
+  force.linkDistance 150
   force.linkStrength 0.3
   force.gravity 0.1
   force.start()

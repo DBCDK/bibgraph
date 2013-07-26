@@ -94,7 +94,6 @@
     klynge.py += dy;
     movingX += dx;
     movingY += dy;
-    console.log(klynge.x, klynge.px, movingX);
     force.start();
     return true;
   };
@@ -106,7 +105,7 @@
   });
 
   draw = function() {
-    var $div, a, b, edges, force, h, i, idx, klynge, link, n, node, size, svg, updateForce, w, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _n, _ref, _ref1;
+    var $canvas, $div, a, b, canvas, ctx, edges, force, h, i, idx, klynge, n, size, svg, updateForce, w, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _n, _ref, _ref1;
 
     klynger = klynger.reverse();
     w = window.innerWidth;
@@ -145,8 +144,19 @@
         }
       }
     }
-    link = svg.selectAll(".link").data(edges).enter().append("line").attr("class", "link").style("stroke", "#999").style("stroke-width", 1);
-    node = svg.selectAll(".node").data(klynger).enter().append("text").style("font", "12px sans-serif").style("text-anchor", "middle").style("text-shadow", "1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white").attr("class", "node").call(force.drag);
+    $canvas = $("<canvas></canvas>");
+    $("body").append($canvas);
+    canvas = $canvas[0];
+    ctx = canvas.getContext("2d");
+    ctx.width = canvas.width = w;
+    ctx.height = canvas.height = h;
+    $canvas.css({
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: w,
+      height: h
+    });
     for (_n = 0, _len4 = klynger.length; _n < _len4; _n++) {
       klynge = klynger[_n];
       klynge.title = "" + klynge.title;
@@ -183,29 +193,22 @@
     }
     n = 0;
     updateForce = function() {
-      var _len5, _o;
+      var edge, _len5, _len6, _o, _p;
 
       for (_o = 0, _len5 = klynger.length; _o < _len5; _o++) {
         klynge = klynger[_o];
-        klynge.div.style.top = klynge.y + "px";
+        klynge.div.style.top = (klynge.y - divWidth / 2) + "px";
         klynge.div.style.left = (klynge.x - divWidth / 2) + "px";
       }
-      link.attr("x1", function(d) {
-        return d.source.x;
-      }).attr("y1", function(d) {
-        return d.source.y;
-      }).attr("x2", function(d) {
-        return d.target.x;
-      }).attr("y2", function(d) {
-        return d.target.y;
-      });
-      return node.attr("x", function(d) {
-        return d.x;
-      }).attr("y", function(d) {
-        return d.y + 2;
-      }).text(function(d) {
-        return d.label || d._id;
-      });
+      ctx.lineWidth = 0.3;
+      ctx.clearRect(0, 0, w, h);
+      ctx.beginPath();
+      for (_p = 0, _len6 = edges.length; _p < _len6; _p++) {
+        edge = edges[_p];
+        ctx.moveTo(edge.source.x, edge.source.y);
+        ctx.lineTo(edge.target.x, edge.target.y);
+      }
+      return ctx.stroke();
     };
     force.size([w, h]);
     force.on("tick", function() {
@@ -214,7 +217,7 @@
     force.nodes(klynger);
     force.links(edges);
     force.charge(-400);
-    force.linkDistance(120);
+    force.linkDistance(150);
     force.linkStrength(0.3);
     force.gravity(0.1);
     return force.start();
