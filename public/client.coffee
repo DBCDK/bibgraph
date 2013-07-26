@@ -71,23 +71,10 @@ ctx = undefined
 canvas = undefined
 klynger = []
 edges = []
-draw = ->
-  klynger = klynger.reverse()
-  w = window.innerWidth
-  h = window.innerHeight
-  window.force = force = d3.layout.force() #{{{2
-
-  document.getElementById("graph").innerHTML = ""
-  svg = d3.select("#graph").append("svg")
-  svg.attr("width", w)
-  svg.attr("height", h)
-
-  for i in [0..klynger.length - 1] #{{{2
+force = undefined
+findEdges = -> #{{{2
+  for i in [0..klynger.length - 1]
     klynger[i].index = i
-
-  for klynge in klynger
-    klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
-    klynge.label = ""
 
   idx = {}
   idx[klynge.klynge] = klynge.index for klynge in klynger
@@ -100,20 +87,48 @@ draw = ->
           source: a.index
           target: idx[b.klynge]
 
+startDrawing = -> #{{{2
+  initDraw()
+  findEdges()
+  draw()
+
+initDraw = -> #{{{2
+
+  document.getElementById("graph").innerHTML = ""
   $canvas = $ "<canvas></canvas>"
-  $("body").append $canvas
+  $("#graph").append $canvas
   canvas = $canvas[0]
   ctx = canvas.getContext "2d"
-  ctx.width = canvas.width = w
-  ctx.height = canvas.height = h
   $canvas.css
     position: "absolute"
     top: 0
     left: 0
-    width: w
-    height: h
 
+  window.force = force = d3.layout.force() 
+  force.size [window.innerWidth, window.innerHeight]
+  force.on "tick", forceTick
+  force.charge -400
+  force.linkDistance 150
+  force.linkStrength 0.3
+  force.gravity 0.1
+
+draw = -> #{{{2
+  # Resize canvas {{{3
+  w = window.innerWidth
+  h = window.innerHeight
+  ctx.width = canvas.width = w
+  ctx.height = canvas.height = h
+  canvas.style.width = w + "px"
+  canvas.style.heiht = h + "px"
+
+
+  # Generate titles for klynger {{{3
   for klynge in klynger
+    klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
+    klynge.label = ""
+
+  # Create divs for klynger {{{3
+  for klynge in klynger.reverse()
     klynge.title = "" + klynge.title
     $div = $ "<div>" + klynge.title + "</div>"
     $div.data "klynge", klynge
@@ -133,7 +148,9 @@ draw = ->
       boxShadow: "1px 1px 4px rgba(0, 0, 0, 0.5)"
       padding: 4
       borderRadius: 4
-    $("body").append $div
+    $("#graph").append $div
+
+    # Scale font to fit each box {{{3
     size = 12
     addMenu $div, klynge
     while $div.height() > boxSize and size > 8
@@ -142,19 +159,12 @@ draw = ->
     $div.css {height: boxSize}
     klynge.div = $div[0]
 
-  n = 0
-
-  force.size [w, h]
-  force.on "tick", updateForce
+  # Update force graph {{{3
   force.nodes klynger
   force.links edges
-  force.charge -400
-  force.linkDistance 150
-  force.linkStrength 0.3
-  force.gravity 0.1
   force.start()
 
-updateForce = -> #{{{2
+forceTick = -> #{{{2
   for klynge in klynger
     klynge.div.style.top = (klynge.y - boxSize/2) + "px"
     klynge.div.style.left = (klynge.x - boxSize/2) + "px"
@@ -259,7 +269,7 @@ search = () ->
         klynger = [max]
         console.log "root:", max
         start ->
-          draw()
+          startDrawing()
           console.log "done"
 
 
