@@ -18,6 +18,52 @@ qp.intToColor = (i) -> "#" + ((i & 0xffffff) + 0x1000000).toString(16).slice(1)
 qp.hashColorLight = (s) -> qp.intToColor 0xe0e0e0 | qp.prng 1 + qp.strhash s
 qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strhash s
 
+# PopUp Menu {{{1
+
+movingKlynge = undefined
+movingX = 0
+movingY = 0
+movingX0 = 0
+movingY0 = 0
+
+addMenu = ($elem, klynge) ->
+  elem = $elem[0]
+  # TODO functions below should not be defined in the closure
+  elem.addEventListener "mousedown", (e) ->
+    return if movingKlynge
+    e.preventDefault()
+    movingKlynge = klynge
+    movingX0 = movingX = e.x
+    movingY0 = movingY = e.y
+    klynge.fixed = true
+    showMenuItems()
+    true
+
+stopMoving  = (e) ->
+  e.preventDefault()
+  movingKlynge.fixed = movingKlynge.pinned if movingKlynge
+  movingKlynge = undefined
+  true
+movingMouseMove = (e) ->
+    return if not movingKlynge
+    klynge = movingKlynge
+    e.preventDefault()
+    dx = e.x - movingX
+    dy = e.y - movingY
+    klynge.x += dx
+    klynge.y += dy
+    klynge.px += dx
+    klynge.py += dy
+    movingX += dx
+    movingY += dy
+    console.log klynge.x, klynge.px, movingX
+    force.start()
+    true
+
+$ ->
+  window.addEventListener "mousemove", movingMouseMove
+  window.addEventListener "mouseup", stopMoving
+  window.addEventListener "mouseleave", stopMoving
 
 
 # Draw graph {{{1
@@ -26,7 +72,7 @@ draw = ->
   klynger = klynger.reverse()
   w = window.innerWidth
   h = window.innerHeight
-  force = d3.layout.force() #{{{2
+  window.force = force = d3.layout.force() #{{{2
 
   document.getElementById("graph").innerHTML = ""
   svg = d3.select("#graph").append("svg")
@@ -76,6 +122,7 @@ draw = ->
   for klynge in klynger
     klynge.title = "" + klynge.title
     $div = $ "<div>" + klynge.title + "</div>"
+    $div.data "klynge", klynge
     $div.css
       position: "absolute"
       width: divWidth
@@ -93,6 +140,7 @@ draw = ->
       borderRadius: 4
     $("body").append $div
     size = 12
+    addMenu $div, klynge
     while $div.height() > divWidth and size > 8
       --size
       $div.css {fontSize: size}
@@ -119,8 +167,8 @@ draw = ->
   force.on "tick", -> updateForce()
   force.nodes klynger
   force.links edges
-  force.charge -800
-  force.linkDistance 150
+  force.charge -400
+  force.linkDistance 120
   force.linkStrength 0.3
   force.gravity 0.1
   force.start()
@@ -138,7 +186,7 @@ start = (done)->
   expand done if klynger.length
   update()
 
-_pickN = 0
+_pickN = 1
 pick = (arr) ->
   _pickN = qp.prng _pickN
   arr[(_pickN&0x7fffffff) % arr.length]
@@ -165,6 +213,8 @@ requestKlynge = (klyngeId, done) ->
   $.get "klynge/" + klyngeId, (klynge) ->
     return done?() if not klynge.faust
     klynger.push klynge
+    klynge.adhl?.sort (a, b) ->
+      b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
     $.get "faust/" + klynge.faust[0], (faust) ->
       klynge.title = faust.title
       update()
