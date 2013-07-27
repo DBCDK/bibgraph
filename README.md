@@ -16,6 +16,7 @@ Work in progress
 - better traversal, starting in pinned elements
     - perhaps deterministic random, with separate bucket of nodes per pinned, and picked random from that
         - one seed generates seeds for each bucket, and and bucket elements generated one bucket at a time - in order, same element allowed in multible buckets, but only yields one box
+    - expand node with certain deterministic probability, ie. each potential node put into large number of buckets, and then empty buckets in same permuted order. Ie. assign (salted) hashed number for each possible expand klyngeId, keep taking the one with the lowest number.
 - encode expansions+fixedPoss in hash if not used for anything else
 - mouse-handler-abstraction for touch
 
