@@ -1,6 +1,9 @@
 nNodes = 10
 edgeTry = 10
 boxSize = 60
+boxPadding = 4
+menuSize = 40
+
 
 # Util to be merged into qp{{{1
 
@@ -26,29 +29,51 @@ movingY = 0
 movingX0 = 0
 movingY0 = 0
 
-menuItems =
-  "+":
-    x: 50
-    y: -50
+pin = (klynge) -> #{{{2
+  pinned = !klynge.pinned
+  klynge.pinned = pinned
+  klynge.fixed = pinned
+  if pinned
+    ($ klynge.div).addClass "pinned"
+  else
+    ($ klynge.div).removeClass "pinned"
+
+menuItems = #{{{2
+  "0":
+    x: -menuSize * 1.2
+    y: menuSize * .2
   "-":
-    x: -50
-    y: -50
+    x: -menuSize * .8
+    y: -menuSize * .8
+  "p":
+    x: boxSize/2 - menuSize/2
+    y: -menuSize * 1.2
+    fn: pin
+  "+":
+    x: boxSize - menuSize * .2
+    y: -menuSize * .8
+  "*":
+    x: boxSize + menuSize * .2
+    y: menuSize * .2
 
 showMenuItems = -> #{{{2
   return if !movingKlynge
   for name, item of menuItems
-    (->
-      $div = $ "<div>#{name}</div>"
+    ((name, item) ->
+      $div = $ "<div><div>#{name}</div></div>"
       $div.addClass "bibgraphMenuItem"
       $div.css
         left: movingKlynge.x + item.x
         top: movingKlynge.y + item.y
+        width: menuSize
+        height: menuSize
       ($ "#graph").append $div
       $div.on "mouseup", ->
+        item.fn(movingKlynge) if item.fn
         console.log "enable", name
       $div.on "mouseover", -> $div.addClass "active"
       $div.on "mouseout", -> $div.removeClass "active"
-    )()
+    )(name, item)
 
   
 hideMenuItems = -> #{{{2
@@ -62,6 +87,7 @@ addMenu = ($elem, klynge) -> #{{{2
     return if movingKlynge
     e.preventDefault()
     movingKlynge = klynge
+    $elem.addClass "active"
     movingX0 = movingX = e.x
     movingY0 = movingY = e.y
     klynge.fixed = true
@@ -70,13 +96,22 @@ addMenu = ($elem, klynge) -> #{{{2
 
 stopMoving  = (e) -> #{{{2
   e.preventDefault()
-  movingKlynge.fixed = movingKlynge.pinned if movingKlynge
-  movingKlynge = undefined
   hideMenuItems()
+  return if movingKlynge == undefined
+  console.log movingKlynge
+  movingKlynge.fixed = movingKlynge.pinned
+  ($ movingKlynge.div).removeClass "active"
+  movingKlynge = undefined
   true
 
 movingMouseMove = (e) -> #{{{2
   return if not movingKlynge
+
+  dx = movingX - movingX0
+  dy = movingY - movingY0
+  menuRadius = menuSize + boxSize * Math.sqrt(2)
+  hideMenuItems() if dx*dx + dy*dy > menuRadius*menuRadius
+
   klynge = movingKlynge
   e.preventDefault()
   dx = e.x - movingX
@@ -161,23 +196,13 @@ draw = -> #{{{2
   for klynge in klynger.reverse()
     klynge.title = "" + klynge.title
     $div = $ "<div>" + klynge.title + "</div>"
+    $div.addClass "bibgraphBox"
     $div.data "klynge", klynge
     $div.css
-      position: "absolute"
-      width: boxSize
-      font: "100px sans serif"
-      textAlign: "center"
-      #border: "1px solid rgba(0,0,0,0.3)"
+      width: boxSize - 2*boxPadding
       color: qp.hashColorDark klynge.title
-      background: qp.hashColorLight klynge.title
-      background: "rgba(255,255,255,0.75)"
-      hyphens: "auto"
-      MozHyphens: "auto"
-      WebkitHyphens: "auto"
-      overflow: "hidden"
-      boxShadow: "1px 1px 4px rgba(0, 0, 0, 0.5)"
-      padding: 4
-      borderRadius: 4
+      padding: boxPadding
+      borderRadius: boxPadding
     $("#graph").append $div
 
     # Scale font to fit each box {{{3
@@ -196,15 +221,15 @@ draw = -> #{{{2
 
 forceTick = -> #{{{2
   for klynge in klynger
-    klynge.div.style.top = (klynge.y - boxSize/2) + "px"
-    klynge.div.style.left = (klynge.x - boxSize/2) + "px"
+    klynge.div.style.top = klynge.y + "px"
+    klynge.div.style.left = klynge.x + "px"
 
   ctx.lineWidth = 0.3
   ctx.clearRect 0, 0, canvas.width, canvas.height
   ctx.beginPath()
   for edge in edges
-    ctx.moveTo edge.source.x, edge.source.y
-    ctx.lineTo edge.target.x, edge.target.y
+    ctx.moveTo edge.source.x + boxSize / 2, edge.source.y + boxSize / 2
+    ctx.lineTo edge.target.x + boxSize / 2, edge.target.y + boxSize / 2
   ctx.stroke()
 
 
