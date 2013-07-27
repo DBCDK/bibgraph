@@ -1,4 +1,4 @@
-nNodes = 100
+nNodes = 10
 edgeTry = 10
 boxSize = 60
 
@@ -26,6 +26,35 @@ movingY = 0
 movingX0 = 0
 movingY0 = 0
 
+menuItems =
+  "+":
+    x: 50
+    y: -50
+  "-":
+    x: -50
+    y: -50
+
+showMenuItems = -> #{{{2
+  return if !movingKlynge
+  for name, item of menuItems
+    (->
+      $div = $ "<div>#{name}</div>"
+      $div.addClass "bibgraphMenuItem"
+      $div.css
+        left: movingKlynge.x + item.x
+        top: movingKlynge.y + item.y
+      ($ "#graph").append $div
+      $div.on "mouseup", ->
+        console.log "enable", name
+      $div.on "mouseover", -> $div.addClass "active"
+      $div.on "mouseout", -> $div.removeClass "active"
+    )()
+
+  
+hideMenuItems = -> #{{{2
+  $(".bibgraphMenuItem").remove()
+  
+
 addMenu = ($elem, klynge) -> #{{{2
   elem = $elem[0]
   # TODO functions below should not be defined in the closure
@@ -43,6 +72,7 @@ stopMoving  = (e) -> #{{{2
   e.preventDefault()
   movingKlynge.fixed = movingKlynge.pinned if movingKlynge
   movingKlynge = undefined
+  hideMenuItems()
   true
 
 movingMouseMove = (e) -> #{{{2
