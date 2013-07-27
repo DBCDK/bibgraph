@@ -6,14 +6,18 @@ Work in progress
 
 # Roadmap
 
-- traversal not random, but 6-3-3 or something similar initially
-    - and corresponding links
-- dynamic update of graph
 - embeddable code
 - close visualisation on background click
+- replace menu with:
+    - pinned position when dragged
+    - unpinned when clicked
+    - generate graph based on pinned elements (size `k*sqrt(w*h)*log(numPinned)`)
+    - later: ghosts from recently unpinned elements
+- better traversal, starting in pinned elements
+    - perhaps deterministic random, with separate bucket of nodes per pinned, and picked random from that
+        - one seed generates seeds for each bucket, and and bucket elements generated one bucket at a time - in order, same element allowed in multible buckets, but only yields one box
 - encode expansions+fixedPoss in hash if not used for anything else
 - mouse-handler-abstraction for touch
-- make i work in other than webkit
 
 ## Done
 - weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up
@@ -22,6 +26,8 @@ Work in progress
 - better line drawing
 - pinnable
 - popup menu
+- dynamic update of graph
+- make it work in other than webkit
 
 # Running:
 
