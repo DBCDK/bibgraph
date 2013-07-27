@@ -1,17 +1,15 @@
-nNodes = 50
-edgeTry = 10
 boxSize = 60
 boxPadding = 4
 menuSize = 40
 backlinks = 4
-recur = 18
+recur = 60
+firstBranch = 6
+eachBranch = 3
 
 klynger = {}
 nodes = []
 links = []
 root = undefined
-graphLoading = false
-
 
 # Util to be merged into qp{{{1
 
@@ -30,7 +28,6 @@ qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strhash s
 qp.log = (args...) -> qp._log? document.title, args...
 
 # Drag and popUp Menu {{{1
-# State {{{2
 clickTime = 0
 movingKlynge = undefined
 movingX = 0
@@ -38,7 +35,8 @@ movingY = 0
 movingX0 = 0
 movingY0 = 0
 
-pin = (klynge) -> #{{{2
+# Handlers {{{2
+pin = (klynge) -> #{{{3
   pinned = !klynge.pinned
   klynge.pinned = pinned
   klynge.fixed = pinned
@@ -47,24 +45,24 @@ pin = (klynge) -> #{{{2
   else
     ($ klynge.div).removeClass "pinned"
 
-increase = (klynge) -> #{{{2
+increase = (klynge) -> #{{{3
   klynge.children += 3
   update()
 
-decrease = (klynge) -> #{{{2
+decrease = (klynge) -> #{{{3
   klynge.children -= 3 if klynge.children >= 3
   update()
 
-clear = (klynge) -> #{{{2
+clear = (klynge) -> #{{{3
   klynge.children = 0
   update()
 
-expand = (klynge) -> #{{{2
+expand = (klynge) -> #{{{3
   recur = 10
   root = klynge.klynge
   klynger = {}
   klynger[root] = klynge
-  klynge.children = 6
+  klynge.children = firstBranch
   nodes = []
   update()
 
@@ -154,8 +152,8 @@ movingMouseMove = (e) -> #{{{2
 
   klynge = movingKlynge
   e.preventDefault()
-  dx = e.x - movingX
-  dy = e.y - movingY
+  dx = e.clientX - movingX
+  dy = e.clientY - movingY
   klynge.x += dx
   klynge.y += dy
   klynge.px += dx
@@ -174,27 +172,8 @@ $ -> # Bind events {{{2
 #
 ctx = undefined
 canvas = undefined
-nodesOld = []
 edges = []
 force = undefined
-findEdges = -> #{{{2
-  for i in [0..nodesOld.length - 1]
-    nodesOld[i].index = i
-
-  idx = {}
-  idx[klynge.klynge] = klynge.index for klynge in nodesOld
-
-  edges = []
-  for a in nodesOld
-    for b in a.adhl.slice(0, edgeTry)
-      if typeof idx[b.klynge] == "number"
-        edges.push
-          source: a.index
-          target: idx[b.klynge]
-
-startDrawing = -> #{{{2
-  findEdges()
-  draw()
 
 initDraw = -> #{{{2
 
@@ -271,11 +250,9 @@ forceTick = -> #{{{2
     ctx.lineTo link.target.x + boxSize / 2, link.target.y + boxSize / 2
   ctx.stroke()
 
-
 # Graph management {{{1
-
-
-requestKlynge = (klyngeId) ->
+graphLoading = false
+requestKlynge = (klyngeId) -> #{{{2
   if klynger[klyngeId]
     klynge = klynger[klyngeId]
     nodes.push klynge if !klynge.added
@@ -286,7 +263,7 @@ requestKlynge = (klyngeId) ->
   $.get "klynge/" + klyngeId, (klynge) ->
     klynge = {raw: klynge} if typeof klynge != "object"
     if recur > 0
-      klynge.children = 3
+      klynge.children = eachBranch
       --recur
     else
       klynge.children = 0
@@ -297,14 +274,14 @@ requestKlynge = (klyngeId) ->
       b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
     update()
 
-updateKlynge = (klynge) ->
+updateKlynge = (klynge) -> #{{{2
   return if !klynge.faust
   $.get "faust/" + klynge.faust[0], (faust) ->
     klynge.title = faust.title
     update()
 
 
-update = ->
+update = -> #{{{2
   i = 0
   for _, klynge of klynger
     klynge.added = false
@@ -334,108 +311,53 @@ update = ->
     klynge.children = 0 if !klynge.added
   draw()
 
-
-# Old graph management {{{1
-
-
-reset = ->
-  existing = {}
-  _pickN = 0
-  window.nodesOld = nodesOld = []
-
-start = (done)->
-  expand done if nodesOld.length
-  updateOld()
-
-_pickN = 1
-pick = (arr) ->
-  _pickN = qp.prng _pickN
-  arr[(_pickN&0x7fffffff) % arr.length]
-
-
-existing = {}
-expand = (done) ->
-  return done?() if nodesOld.length >= nNodes
-
-  for klynge in nodesOld
-    existing[klynge.klynge] = true
-
-  for i in [0..20]
-    klynge = nodesOld[Math.random()*nodesOld.length | 0]
-    klynge = pick nodesOld
-    for child in klynge.adhl
-      if !existing[child.klynge]
-        existing[child.klynge] = true
-        return requestKlyngeOld child.klynge, ->
-          expand done
-
-# Add a klynge to the klynge-list, loading it from the api {{{2
-requestKlyngeOld = (klyngeId, done) ->
-  $.get "klynge/" + klyngeId, (klynge) ->
-    return done?() if not klynge.faust
-    nodesOld.push klynge
-    klynge.adhl?.sort (a, b) ->
-      b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
-    $.get "faust/" + klynge.faust[0], (faust) ->
-      klynge.title = faust.title
-      updateOld()
-      done?()
-
-
-# Update the view on graph change
-$graph = undefined
-$ -> $graph = $ "#graph"
-
-updateOld = ->
-  $graph.empty()
-  nodesOld = nodesOld.filter (klynge) -> klynge.adhl
-  for klynge in nodesOld
-    $graph.append "<span> &nbsp; #{klynge.title} #{klynge.count}</span>"
-
-# Main - to be replaced with better embedding when going public {{{1
-
-# Search {{{2
-search = () ->
-  reset()
-  query = ($ "#query")
-    .css({display: "none"})
-    .val()
-  location.hash = query
-  nodesOld = []
-  qp.log "search", query
-
-  # Send search query to web service
-  $.get "search/" + query, (result) ->
-    ($ "#query")
-      .css({display: "inline"})
-      .val("")
-
-    # Lookup each of the result
-    async.map result, (faust, done) ->
-        $.get "faust/" + faust, (faust) ->
-          if faust?.klynge
-            requestKlyngeOld faust?.klynge, done
-          else
-            done()
-
-      # ÷÷÷÷Discard all but the most popular result
-      , ->
-        max = {count: 0}
-        for klynge in nodesOld
-          if max.count <= klynge.count
-            max = klynge
-        nodesOld = [max]
-        console.log "root:", max
-   #     start ->
-   #      startDrawing()
-   #     console.log "done"
-        initDraw()
-        root = max.klynge
-        requestKlynge root
-
-
-# Handle seach request and location.hash {{{2
-$ ->
+$ -> #{{{1
+  search = () -> #{{{2
+    nodesOld = []
+    requestKlyngeOld = (klyngeId, done) ->
+      $.get "klynge/" + klyngeId, (klynge) ->
+        return done?() if not klynge.faust
+        nodesOld.push klynge
+        klynge.adhl?.sort (a, b) ->
+          b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
+        $.get "faust/" + klynge.faust[0], (faust) ->
+          klynge.title = faust.title
+          nodesOld = nodesOld.filter (klynge) -> klynge.adhl
+          done?()
+    
+    query = ($ "#query")
+      .css({display: "none"})
+      .val()
+    location.hash = query
+  
+    # Send search query to web service
+    $.get "search/" + query, (result) ->
+      ($ "#query")
+        .css({display: "inline"})
+        .val("")
+  
+      # Lookup each of the result
+      async.map result, (faust, done) ->
+          $.get "faust/" + faust, (faust) ->
+            if faust?.klynge
+              requestKlyngeOld faust?.klynge, done
+            else
+              done()
+  
+        # ÷÷÷÷Discard all but the most popular result
+        , ->
+          max = {count: 0}
+          for klynge in nodesOld
+            if max.count <= klynge.count
+              max = klynge
+          nodesOld = [max]
+          console.log "root:", max
+          initDraw()
+          root = max.klynge
+          requestKlynge root
+  
+  # Handle seach request and location.hash {{{2
+  
   ($ "#search").on "submit", ->
     search()
     false
