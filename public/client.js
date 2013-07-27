@@ -112,6 +112,7 @@
     klynger[root] = klynge;
     klynge.children = firstBranch;
     nodes = [];
+    initDraw();
     return update();
   };
 
@@ -197,8 +198,8 @@
       e.preventDefault();
       movingKlynge = klynge;
       $elem.addClass("active");
-      movingX0 = movingX = e.x;
-      movingY0 = movingY = e.y;
+      movingX0 = movingX = e.screenX;
+      movingY0 = movingY = e.screenY;
       klynge.fixed = true;
       showMenuItems();
       return true;
@@ -240,8 +241,8 @@
     console.log("xxxx", dx * dx + dy * dy < boxSize * boxSize / 4 && Date.now() - clickTime < 1000);
     klynge = movingKlynge;
     e.preventDefault();
-    dx = e.clientX - movingX;
-    dy = e.clientY - movingY;
+    dx = e.screenX - movingX;
+    dy = e.screenY - movingY;
     klynge.x += dx;
     klynge.y += dy;
     klynge.px += dx;
@@ -267,18 +268,15 @@
   force = void 0;
 
   initDraw = function() {
+    var $canvas, h, w;
+
     window.force = force = d3.layout.force();
     force.size([window.innerWidth, window.innerHeight]);
     force.on("tick", forceTick);
     force.charge(-400);
     force.linkDistance(150);
     force.linkStrength(0.3);
-    return force.gravity(0.1);
-  };
-
-  draw = function() {
-    var $canvas, $div, h, klynge, size, w, _i, _j, _len, _len1, _ref;
-
+    force.gravity(0.1);
     document.getElementById("graph").innerHTML = "";
     $canvas = $("<canvas></canvas>");
     $("#graph").append($canvas);
@@ -294,40 +292,39 @@
     ctx.width = canvas.width = w;
     ctx.height = canvas.height = h;
     canvas.style.width = w + "px";
-    canvas.style.heiht = h + "px";
+    return canvas.style.heiht = h + "px";
+  };
+
+  draw = function() {
+    var $div, klynge, size, _i, _len;
+
     for (_i = 0, _len = nodes.length; _i < _len; _i++) {
       klynge = nodes[_i];
-      klynge.label = String(klynge.title).replace("&amp;", "&").replace(/&#([0-9]*);/g, function(_, n) {
-        return String.fromCharCode(n);
-      });
-      klynge.label = "";
-    }
-    _ref = nodes.reverse();
-    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-      klynge = _ref[_j];
-      klynge.title = "" + klynge.title;
-      $div = $("<div>" + klynge.title + "</div>");
-      $div.addClass("bibgraphBox");
-      $div.data("klynge", klynge);
-      $div.css({
-        width: boxSize - 2 * boxPadding,
-        color: qp.hashColorDark(klynge.title),
-        padding: boxPadding,
-        borderRadius: boxPadding
-      });
-      $("#graph").append($div);
-      size = 12;
-      addMenu($div, klynge);
-      while ($div.height() > boxSize && size > 8) {
-        --size;
+      if (klynge.title && !klynge.div) {
+        klynge.title = "" + klynge.title;
+        $div = $("<div>" + klynge.title + "</div>");
+        $div.addClass("bibgraphBox");
+        $div.data("klynge", klynge);
         $div.css({
-          fontSize: size
+          width: boxSize - 2 * boxPadding,
+          color: qp.hashColorDark(klynge.title),
+          padding: boxPadding,
+          borderRadius: boxPadding
         });
+        $("#graph").append($div);
+        size = 12;
+        addMenu($div, klynge);
+        while ($div.height() > boxSize && size > 8) {
+          --size;
+          $div.css({
+            fontSize: size
+          });
+        }
+        $div.css({
+          height: boxSize
+        });
+        klynge.div = $div[0];
       }
-      $div.css({
-        height: boxSize
-      });
-      klynge.div = $div[0];
     }
     force.nodes(nodes);
     force.links(links);
@@ -339,16 +336,20 @@
 
     for (_i = 0, _len = nodes.length; _i < _len; _i++) {
       klynge = nodes[_i];
-      klynge.div.style.top = klynge.y + "px";
-      klynge.div.style.left = klynge.x + "px";
+      if (klynge.div) {
+        klynge.div.style.top = klynge.y + "px";
+        klynge.div.style.left = klynge.x + "px";
+      }
     }
     ctx.lineWidth = 0.3;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     for (_j = 0, _len1 = links.length; _j < _len1; _j++) {
       link = links[_j];
-      ctx.moveTo(link.source.x + boxSize / 2, link.source.y + boxSize / 2);
-      ctx.lineTo(link.target.x + boxSize / 2, link.target.y + boxSize / 2);
+      if (link.source.div && link.target.div) {
+        ctx.moveTo(link.source.x + boxSize / 2, link.source.y + boxSize / 2);
+        ctx.lineTo(link.target.x + boxSize / 2, link.target.y + boxSize / 2);
+      }
     }
     return ctx.stroke();
   };

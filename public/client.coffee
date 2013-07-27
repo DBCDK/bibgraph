@@ -64,6 +64,7 @@ expand = (klynge) -> #{{{3
   klynger[root] = klynge
   klynge.children = firstBranch
   nodes = []
+  initDraw()
   update()
 
 menuItems = #{{{2
@@ -120,8 +121,8 @@ addMenu = ($elem, klynge) -> #{{{2
     e.preventDefault()
     movingKlynge = klynge
     $elem.addClass "active"
-    movingX0 = movingX = e.x
-    movingY0 = movingY = e.y
+    movingX0 = movingX = e.screenX
+    movingY0 = movingY = e.screenY
     klynge.fixed = true
     showMenuItems()
     true
@@ -152,8 +153,8 @@ movingMouseMove = (e) -> #{{{2
 
   klynge = movingKlynge
   e.preventDefault()
-  dx = e.clientX - movingX
-  dy = e.clientY - movingY
+  dx = e.screenX - movingX
+  dy = e.screenY - movingY
   klynge.x += dx
   klynge.y += dy
   klynge.px += dx
@@ -185,7 +186,6 @@ initDraw = -> #{{{2
   force.linkStrength 0.3
   force.gravity 0.1
 
-draw = -> #{{{2
   document.getElementById("graph").innerHTML = ""
   $canvas = $ "<canvas></canvas>"
   $("#graph").append $canvas
@@ -205,32 +205,29 @@ draw = -> #{{{2
   canvas.style.heiht = h + "px"
 
 
-  # Generate titles for nodes {{{3
-  for klynge in nodes
-    klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
-    klynge.label = ""
-
+draw = -> #{{{2
   # Create divs for nodes {{{3
-  for klynge in nodes.reverse()
-    klynge.title = "" + klynge.title
-    $div = $ "<div>" + klynge.title + "</div>"
-    $div.addClass "bibgraphBox"
-    $div.data "klynge", klynge
-    $div.css
-      width: boxSize - 2*boxPadding
-      color: qp.hashColorDark klynge.title
-      padding: boxPadding
-      borderRadius: boxPadding
-    $("#graph").append $div
-
-    # Scale font to fit each box {{{3
-    size = 12
-    addMenu $div, klynge
-    while $div.height() > boxSize and size > 8
-      --size
-      $div.css {fontSize: size}
-    $div.css {height: boxSize}
-    klynge.div = $div[0]
+  for klynge in nodes
+    if klynge.title and not klynge.div
+      klynge.title = "" + klynge.title
+      $div = $ "<div>" + klynge.title + "</div>"
+      $div.addClass "bibgraphBox"
+      $div.data "klynge", klynge
+      $div.css
+        width: boxSize - 2*boxPadding
+        color: qp.hashColorDark klynge.title
+        padding: boxPadding
+        borderRadius: boxPadding
+      $("#graph").append $div
+  
+      # Scale font to fit each box {{{3
+      size = 12
+      addMenu $div, klynge
+      while $div.height() > boxSize and size > 8
+        --size
+        $div.css {fontSize: size}
+      $div.css {height: boxSize}
+      klynge.div = $div[0]
 
   # Update force graph {{{3
   force.nodes nodes
@@ -239,15 +236,17 @@ draw = -> #{{{2
 
 forceTick = -> #{{{2
   for klynge in nodes
-    klynge.div.style.top = klynge.y + "px"
-    klynge.div.style.left = klynge.x + "px"
+    if klynge.div
+      klynge.div.style.top = klynge.y + "px"
+      klynge.div.style.left = klynge.x + "px"
 
   ctx.lineWidth = 0.3
   ctx.clearRect 0, 0, canvas.width, canvas.height
   ctx.beginPath()
   for link in links
-    ctx.moveTo link.source.x + boxSize / 2, link.source.y + boxSize / 2
-    ctx.lineTo link.target.x + boxSize / 2, link.target.y + boxSize / 2
+    if link.source.div and link.target.div
+      ctx.moveTo link.source.x + boxSize / 2, link.source.y + boxSize / 2
+      ctx.lineTo link.target.x + boxSize / 2, link.target.y + boxSize / 2
   ctx.stroke()
 
 # Graph management {{{1
