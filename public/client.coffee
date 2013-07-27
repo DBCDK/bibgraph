@@ -1,4 +1,4 @@
-nNodes = 10
+nNodes = 50
 edgeTry = 10
 boxSize = 60
 boxPadding = 4
@@ -134,18 +134,18 @@ $ -> # Bind events {{{2
 #
 ctx = undefined
 canvas = undefined
-klynger = []
+nodesOld = []
 edges = []
 force = undefined
 findEdges = -> #{{{2
-  for i in [0..klynger.length - 1]
-    klynger[i].index = i
+  for i in [0..nodesOld.length - 1]
+    nodesOld[i].index = i
 
   idx = {}
-  idx[klynge.klynge] = klynge.index for klynge in klynger
+  idx[klynge.klynge] = klynge.index for klynge in nodesOld
 
   edges = []
-  for a in klynger
+  for a in nodesOld
     for b in a.adhl.slice(0, edgeTry)
       if typeof idx[b.klynge] == "number"
         edges.push
@@ -187,13 +187,13 @@ draw = -> #{{{2
   canvas.style.heiht = h + "px"
 
 
-  # Generate titles for klynger {{{3
-  for klynge in klynger
+  # Generate titles for nodesOld {{{3
+  for klynge in nodesOld
     klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
     klynge.label = ""
 
-  # Create divs for klynger {{{3
-  for klynge in klynger.reverse()
+  # Create divs for nodesOld {{{3
+  for klynge in nodesOld.reverse()
     klynge.title = "" + klynge.title
     $div = $ "<div>" + klynge.title + "</div>"
     $div.addClass "bibgraphBox"
@@ -215,12 +215,12 @@ draw = -> #{{{2
     klynge.div = $div[0]
 
   # Update force graph {{{3
-  force.nodes klynger
+  force.nodes nodesOld
   force.links edges
   force.start()
 
 forceTick = -> #{{{2
-  for klynge in klynger
+  for klynge in nodesOld
     klynge.div.style.top = klynge.y + "px"
     klynge.div.style.left = klynge.x + "px"
 
@@ -235,14 +235,79 @@ forceTick = -> #{{{2
 
 # Graph management {{{1
 
+klynger = {}
+nodes = []
+links = []
+root = undefined
+graphLoading = false
+
+requestKlynge = (klyngeId, obj) ->
+  if klynger[klyngeId]
+    klynge = klynger[klyngeId]
+    nodes.push klynge if !klynge.added
+    klynge.added = true
+    return
+  return if graphLoading
+  graphLoading = true
+  console.log "load klynge", klyngeId
+  $.get "klynge/" + klyngeId, (klynge) ->
+    klynge = {raw: klynge} if typeof klynge != "object"
+    $.extend klynge, obj
+    klynger[klyngeId] = klynge
+    graphLoading = false
+    updateKlynge klynge if klynge.faust
+    klynge.adhl?.sort (a, b) ->
+      b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
+    update()
+
+updateKlynge = (klynge) ->
+  return if !klynge.faust
+  $.get "faust/" + klynge.faust[0], (faust) ->
+    klynge.title = faust.title
+    update()
+
+
+update = ->
+  i = 0
+  for _, klynge of klynger
+    klynge.added = false
+  nodes = [klynger[root]]
+  klynger[root].added = true
+  links = []
+  while i < nodes.length
+    klynge = nodes[i]
+    if klynge.adhl
+      children = klynge.adhl.slice(0, klynge.children)
+      if klynge.recursive > 0
+        opt =
+          recursive: klynge.recursive - 1
+          children: 3
+      else
+        opt =
+          recurcursive: 0
+          children: 0
+      for child in children
+        requestKlynge child.klynge, opt
+        child = klynger[child.klynge]
+        if child
+          links.push
+            source: klynge
+            target: child
+    ++i
+  console.log "update", edges, links
+
+
+# Old graph management {{{1
+
+
 reset = ->
   existing = {}
   _pickN = 0
-  window.klynger = klynger = []
+  window.nodesOld = nodesOld = []
 
 start = (done)->
-  expand done if klynger.length
-  update()
+  expand done if nodesOld.length
+  updateOld()
 
 _pickN = 1
 pick = (arr) ->
@@ -252,30 +317,30 @@ pick = (arr) ->
 
 existing = {}
 expand = (done) ->
-  return done?() if klynger.length >= nNodes
+  return done?() if nodesOld.length >= nNodes
 
-  for klynge in klynger
+  for klynge in nodesOld
     existing[klynge.klynge] = true
 
   for i in [0..20]
-    klynge = klynger[Math.random()*klynger.length | 0]
-    klynge = pick klynger
+    klynge = nodesOld[Math.random()*nodesOld.length | 0]
+    klynge = pick nodesOld
     for child in klynge.adhl
       if !existing[child.klynge]
         existing[child.klynge] = true
-        return requestKlynge child.klynge, ->
+        return requestKlyngeOld child.klynge, ->
           expand done
 
 # Add a klynge to the klynge-list, loading it from the api {{{2
-requestKlynge = (klyngeId, done) ->
+requestKlyngeOld = (klyngeId, done) ->
   $.get "klynge/" + klyngeId, (klynge) ->
     return done?() if not klynge.faust
-    klynger.push klynge
+    nodesOld.push klynge
     klynge.adhl?.sort (a, b) ->
       b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
     $.get "faust/" + klynge.faust[0], (faust) ->
       klynge.title = faust.title
-      update()
+      updateOld()
       done?()
 
 
@@ -283,10 +348,10 @@ requestKlynge = (klyngeId, done) ->
 $graph = undefined
 $ -> $graph = $ "#graph"
 
-update = ->
+updateOld = ->
   $graph.empty()
-  klynger = klynger.filter (klynge) -> klynge.adhl
-  for klynge in klynger
+  nodesOld = nodesOld.filter (klynge) -> klynge.adhl
+  for klynge in nodesOld
     $graph.append "<span> &nbsp; #{klynge.title} #{klynge.count}</span>"
 
 # Main - to be replaced with better embedding when going public {{{1
@@ -298,7 +363,7 @@ search = () ->
     .css({display: "none"})
     .val()
   location.hash = query
-  klynger = []
+  nodesOld = []
   qp.log "search", query
 
   # Send search query to web service
@@ -311,21 +376,23 @@ search = () ->
     async.map result, (faust, done) ->
         $.get "faust/" + faust, (faust) ->
           if faust?.klynge
-            requestKlynge faust?.klynge, done
+            requestKlyngeOld faust?.klynge, done
           else
             done()
 
       # ÷÷÷÷Discard all but the most popular result
       , ->
         max = {count: 0}
-        for klynge in klynger
+        for klynge in nodesOld
           if max.count <= klynge.count
             max = klynge
-        klynger = [max]
+        nodesOld = [max]
         console.log "root:", max
         start ->
           startDrawing()
           console.log "done"
+        root = max.klynge
+        requestKlynge root, {recursive: 3, children: 6}
 
 
 # Handle seach request and location.hash {{{2

@@ -6,20 +6,22 @@ Work in progress
 
 # Roadmap
 
-- weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up
 - traversal not random, but 6-3-3 or something similar initially
     - and corresponding links
 - dynamic update of graph
-- clickable books with popup-menu
-    - increase number of links by 3
-    - pin it
-    - decrease number of links by 3
-    - link to bibliotek.dk
-    - close visualisation
-- dragable books
-- refactor/documentation
 - embeddable code
+- close visualisation on background click
+- encode expansions+fixedPoss in hash if not used for anything else
+- mouse-handler-abstraction for touch
+- make i work in other than webkit
+
+## Done
+- weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up
+- draggable books
+- refactor/documentation
 - better line drawing
+- pinnable
+- popup menu
 
 # Running:
 
