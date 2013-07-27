@@ -3,6 +3,14 @@ edgeTry = 10
 boxSize = 60
 boxPadding = 4
 menuSize = 40
+backlinks = 4
+recur = 18
+
+klynger = {}
+nodes = []
+links = []
+root = undefined
+graphLoading = false
 
 
 # Util to be merged into qp{{{1
@@ -23,6 +31,7 @@ qp.log = (args...) -> qp._log? document.title, args...
 
 # Drag and popUp Menu {{{1
 # State {{{2
+clickTime = 0
 movingKlynge = undefined
 movingX = 0
 movingY = 0
@@ -38,13 +47,36 @@ pin = (klynge) -> #{{{2
   else
     ($ klynge.div).removeClass "pinned"
 
+increase = (klynge) -> #{{{2
+  klynge.children += 3
+  update()
+
+decrease = (klynge) -> #{{{2
+  klynge.children -= 3 if klynge.children >= 3
+  update()
+
+clear = (klynge) -> #{{{2
+  klynge.children = 0
+  update()
+
+expand = (klynge) -> #{{{2
+  recur = 10
+  root = klynge.klynge
+  klynger = {}
+  klynger[root] = klynge
+  klynge.children = 6
+  nodes = []
+  update()
+
 menuItems = #{{{2
   "0":
     x: -menuSize * 1.2
     y: menuSize * .2
+    fn: clear
   "-":
     x: -menuSize * .8
     y: -menuSize * .8
+    fn: decrease
   "p":
     x: boxSize/2 - menuSize/2
     y: -menuSize * 1.2
@@ -52,9 +84,11 @@ menuItems = #{{{2
   "+":
     x: boxSize - menuSize * .2
     y: -menuSize * .8
+    fn: increase
   "*":
     x: boxSize + menuSize * .2
     y: menuSize * .2
+    fn: expand
 
 showMenuItems = -> #{{{2
   return if !movingKlynge
@@ -79,12 +113,12 @@ showMenuItems = -> #{{{2
 hideMenuItems = -> #{{{2
   $(".bibgraphMenuItem").remove()
   
-
 addMenu = ($elem, klynge) -> #{{{2
   elem = $elem[0]
   # TODO functions below should not be defined in the closure
   elem.addEventListener "mousedown", (e) ->
     return if movingKlynge
+    clickTime = Date.now()
     e.preventDefault()
     movingKlynge = klynge
     $elem.addClass "active"
@@ -101,6 +135,11 @@ stopMoving  = (e) -> #{{{2
   console.log movingKlynge
   movingKlynge.fixed = movingKlynge.pinned
   ($ movingKlynge.div).removeClass "active"
+
+  dx = movingX - movingX0
+  dy = movingY - movingY0
+  increase(movingKlynge) if dx*dx + dy*dy < boxSize * boxSize / 4 and Date.now() - clickTime < 300
+
   movingKlynge = undefined
   true
 
@@ -111,6 +150,7 @@ movingMouseMove = (e) -> #{{{2
   dy = movingY - movingY0
   menuRadius = menuSize + boxSize * Math.sqrt(2)
   hideMenuItems() if dx*dx + dy*dy > menuRadius*menuRadius
+  console.log "xxxx", dx*dx + dy*dy < boxSize * boxSize / 4 and Date.now() - clickTime < 1000
 
   klynge = movingKlynge
   e.preventDefault()
@@ -153,21 +193,10 @@ findEdges = -> #{{{2
           target: idx[b.klynge]
 
 startDrawing = -> #{{{2
-  initDraw()
   findEdges()
   draw()
 
 initDraw = -> #{{{2
-
-  document.getElementById("graph").innerHTML = ""
-  $canvas = $ "<canvas></canvas>"
-  $("#graph").append $canvas
-  canvas = $canvas[0]
-  ctx = canvas.getContext "2d"
-  $canvas.css
-    position: "absolute"
-    top: 0
-    left: 0
 
   window.force = force = d3.layout.force() 
   force.size [window.innerWidth, window.innerHeight]
@@ -178,6 +207,16 @@ initDraw = -> #{{{2
   force.gravity 0.1
 
 draw = -> #{{{2
+  document.getElementById("graph").innerHTML = ""
+  $canvas = $ "<canvas></canvas>"
+  $("#graph").append $canvas
+  canvas = $canvas[0]
+  ctx = canvas.getContext "2d"
+  $canvas.css
+    position: "absolute"
+    top: 0
+    left: 0
+
   # Resize canvas {{{3
   w = window.innerWidth
   h = window.innerHeight
@@ -187,13 +226,13 @@ draw = -> #{{{2
   canvas.style.heiht = h + "px"
 
 
-  # Generate titles for nodesOld {{{3
-  for klynge in nodesOld
+  # Generate titles for nodes {{{3
+  for klynge in nodes
     klynge.label = String(klynge.title).replace("&amp;", "&").replace /&#([0-9]*);/g, (_, n) -> String.fromCharCode n
     klynge.label = ""
 
-  # Create divs for nodesOld {{{3
-  for klynge in nodesOld.reverse()
+  # Create divs for nodes {{{3
+  for klynge in nodes.reverse()
     klynge.title = "" + klynge.title
     $div = $ "<div>" + klynge.title + "</div>"
     $div.addClass "bibgraphBox"
@@ -215,33 +254,28 @@ draw = -> #{{{2
     klynge.div = $div[0]
 
   # Update force graph {{{3
-  force.nodes nodesOld
-  force.links edges
+  force.nodes nodes
+  force.links links
   force.start()
 
 forceTick = -> #{{{2
-  for klynge in nodesOld
+  for klynge in nodes
     klynge.div.style.top = klynge.y + "px"
     klynge.div.style.left = klynge.x + "px"
 
   ctx.lineWidth = 0.3
   ctx.clearRect 0, 0, canvas.width, canvas.height
   ctx.beginPath()
-  for edge in edges
-    ctx.moveTo edge.source.x + boxSize / 2, edge.source.y + boxSize / 2
-    ctx.lineTo edge.target.x + boxSize / 2, edge.target.y + boxSize / 2
+  for link in links
+    ctx.moveTo link.source.x + boxSize / 2, link.source.y + boxSize / 2
+    ctx.lineTo link.target.x + boxSize / 2, link.target.y + boxSize / 2
   ctx.stroke()
 
 
 # Graph management {{{1
 
-klynger = {}
-nodes = []
-links = []
-root = undefined
-graphLoading = false
 
-requestKlynge = (klyngeId, obj) ->
+requestKlynge = (klyngeId) ->
   if klynger[klyngeId]
     klynge = klynger[klyngeId]
     nodes.push klynge if !klynge.added
@@ -249,10 +283,13 @@ requestKlynge = (klyngeId, obj) ->
     return
   return if graphLoading
   graphLoading = true
-  console.log "load klynge", klyngeId
   $.get "klynge/" + klyngeId, (klynge) ->
     klynge = {raw: klynge} if typeof klynge != "object"
-    $.extend klynge, obj
+    if recur > 0
+      klynge.children = 3
+      --recur
+    else
+      klynge.children = 0
     klynger[klyngeId] = klynge
     graphLoading = false
     updateKlynge klynge if klynge.faust
@@ -277,24 +314,25 @@ update = ->
   while i < nodes.length
     klynge = nodes[i]
     if klynge.adhl
-      children = klynge.adhl.slice(0, klynge.children)
-      if klynge.recursive > 0
-        opt =
-          recursive: klynge.recursive - 1
-          children: 3
-      else
-        opt =
-          recurcursive: 0
-          children: 0
+      children = klynge.adhl.slice 0, klynge.children || 0
       for child in children
-        requestKlynge child.klynge, opt
+        requestKlynge child.klynge
+    ++i
+
+  for klynge in nodes
+    full = true
+    if klynge.adhl
+      for child in klynge.adhl.slice 0, (klynge.children || 0) + backlinks
         child = klynger[child.klynge]
-        if child
+        if child?.added
           links.push
             source: klynge
             target: child
-    ++i
-  console.log "update", edges, links
+        else
+          full = false
+  for _, klynge of klynger
+    klynge.children = 0 if !klynge.added
+  draw()
 
 
 # Old graph management {{{1
@@ -388,11 +426,12 @@ search = () ->
             max = klynge
         nodesOld = [max]
         console.log "root:", max
-        start ->
-          startDrawing()
-          console.log "done"
+   #     start ->
+   #      startDrawing()
+   #     console.log "done"
+        initDraw()
         root = max.klynge
-        requestKlynge root, {recursive: 3, children: 6}
+        requestKlynge root
 
 
 # Handle seach request and location.hash {{{2
