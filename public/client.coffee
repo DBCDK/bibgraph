@@ -13,19 +13,20 @@ root = undefined
 
 # Util to be merged into qp{{{1
 
-qp = window.qp || {}
+qp = window.qp = window.qp || {}
 qp.prngSeed = Date.now()
 qp.prng = (n) -> qp.prngSeed = (1664525 * (if n == undefined then qp.prngSeed else n) + 1013904223) |0
-qp.strhash = (s) ->
+qp.strHash = (s) ->
   hash = 5381
   i = s.length
   while i
     hash = (hash*31 + s.charCodeAt(--i)) | 0 
   hash
 qp.intToColor = (i) -> "#" + ((i & 0xffffff) + 0x1000000).toString(16).slice(1)
-qp.hashColorLight = (s) -> qp.intToColor 0xe0e0e0 | qp.prng 1 + qp.strhash s
-qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strhash s
+qp.hashColorLight = (s) -> qp.intToColor 0xe0e0e0 | qp.prng 1 + qp.strHash s
+qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strHash s
 qp.log = (args...) -> qp._log? document.title, args...
+qp.pick = (arr, seed) -> arr[Math.abs(qp.prng(seed)) % arr.length]
 
 # Drag and popUp Menu {{{1
 clickTime = 0
@@ -178,7 +179,7 @@ force = undefined
 
 initDraw = -> #{{{2
 
-  window.force = force = d3.layout.force() 
+  window.force = force = d3.layout.force()
   force.size [window.innerWidth, window.innerHeight]
   force.on "tick", forceTick
   force.charge -400
@@ -251,6 +252,85 @@ forceTick = -> #{{{2
 
 # Graph management {{{1
 graphLoading = false
+salt = 1
+klyngeWalk = (klyngeId, n, callback, done, salt, acc) -> #{{{2
+
+  if !acc
+    acc = {arr:[], added:{}, links: []} 
+
+  if !done
+    done = callback
+    callback = (->)
+
+  if typeof salt != "number"
+    salt = qp.strHash klyngeId
+
+
+  callback acc.arr, acc.links
+  if n <= 0
+    return done acc.arr, acc.links
+
+
+  loadKlynge klyngeId, (klynge) ->
+    acc.arr.push klynge
+    acc.added[klyngeId] = true
+    hash = salt + qp.strHash klyngeId
+    for i in [0..30]
+      branch = qp.pick acc.arr, hash
+      klyngeId = branch.klynge
+      for child in branch.adhl
+        if !acc.added[child.klynge]
+          console.log klyngeId, child.klynge, acc.added
+          acc.links.push [klyngeId, child.klynge]
+          return klyngeWalk child.klynge, n - 1, callback, done, salt, acc
+      hash = qp.prng hash
+    done acc.arr, acc.links
+
+loadKlynge = (klyngeId, callback)  -> #{{{2
+  if klynger[klyngeId]
+    return callback klynger[klyngeId]
+
+  $.get "klynge/" + klyngeId, (klynge) ->
+
+    klynge = {raw: klynge} if typeof klynge != "object"
+    klynger[klyngeId] = klynge
+
+    klynge.adhl?.sort (a, b) ->
+      b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
+    updateKlynge klynge if klynge.faust
+
+    callback klynge
+
+updateKlynge = (klynge) -> #{{{2
+  return if !klynge.faust
+  $.get "faust/" + klynge.faust[0], (faust) ->
+    klynge.title = faust.title
+    draw()
+
+makeLinks = (links) ->
+  link.sort() for link in links
+  links = links.map JSON.stringify
+  linkMap = {}
+  linkMap[link] = true for link in links
+  links = (Object.keys linkMap).map JSON.parse
+  links.filter
+  result = []
+  for [a, b] in links.filter ((a) -> klynger[a[0]] and klynger[a[1]])
+    source: klynger[a]
+    target: klynger[b]
+
+update = -> #{{{2
+  handleResult = (localNodes, localLinks) ->
+    nodes = localNodes
+    for node in nodes
+      if node.adhl
+        for child in node.adhl.slice(0, 5)
+          if klynger[child.klynge]
+            localLinks.push [node.klynge, child.klynge]
+    links = makeLinks localLinks
+    draw()
+  klyngeWalk root, 50, handleResult, handleResult
+
 requestKlynge = (klyngeId) -> #{{{2
   if klynger[klyngeId]
     klynge = klynger[klyngeId]
@@ -259,26 +339,14 @@ requestKlynge = (klyngeId) -> #{{{2
     return
   return if graphLoading
   graphLoading = true
-  $.get "klynge/" + klyngeId, (klynge) ->
-    klynge = {raw: klynge} if typeof klynge != "object"
+  loadKlynge klyngeId, (klynge) ->
     if recur > 0
       klynge.children = eachBranch
       --recur
     else
       klynge.children = 0
-    klynger[klyngeId] = klynge
     graphLoading = false
-    updateKlynge klynge if klynge.faust
-    klynge.adhl?.sort (a, b) ->
-      b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
     update()
-
-updateKlynge = (klynge) -> #{{{2
-  return if !klynge.faust
-  $.get "faust/" + klynge.faust[0], (faust) ->
-    klynge.title = faust.title
-    update()
-
 
 update = -> #{{{2
   i = 0
