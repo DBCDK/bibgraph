@@ -1,15 +1,11 @@
 boxSize = 60
 boxPadding = 4
-menuSize = 40
-backlinks = 4
-recur = 60
-firstBranch = 6
-eachBranch = 3
+walkDepth = 80
 
 klynger = {}
 nodes = []
 links = []
-root = undefined
+pinned = {}
 
 # Util to be merged into qp{{{1
 
@@ -28,153 +24,71 @@ qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strHash s
 qp.log = (args...) -> qp._log? document.title, args...
 qp.pick = (arr, seed) -> arr[Math.abs(qp.prng(seed)) % arr.length]
 
-# Drag and popUp Menu {{{1
-clickTime = 0
-movingKlynge = undefined
-movingX = 0
-movingY = 0
-movingX0 = 0
-movingY0 = 0
+# Handle mouse/touch {{{1
 
-# Handlers {{{2
-pin = (klynge) -> #{{{3
-  pinned = !klynge.pinned
-  klynge.pinned = pinned
-  klynge.fixed = pinned
-  if pinned
-    ($ klynge.div).addClass "pinned"
-  else
-    ($ klynge.div).removeClass "pinned"
+wasPinned = px0 = py0 = x0 = y0 = startTime = $touched = touchedKlynge = undefined
 
-increase = (klynge) -> #{{{3
-  klynge.children += 3
-  update()
+doStart = (e, $elem, klynge, x, y) ->
+  console.log "start", $touched
+  return if $touched
+  touchedKlynge = klynge
+  px0 = touchedKlynge.px
+  py0 = touchedKlynge.py
+  $touched = $elem
+  x0 = x
+  y0 = y
+  startTime = Date.now()
 
-decrease = (klynge) -> #{{{3
-  klynge.children -= 3 if klynge.children >= 3
-  update()
+  $touched.addClass "pinned"
+  wasPinned = pinned[touchedKlynge.klynge]
+  pinned[touchedKlynge.klynge] = true
+  touchedKlynge.fixed = true
 
-clear = (klynge) -> #{{{3
-  klynge.children = 0
-  update()
-
-expand = (klynge) -> #{{{3
-  recur = 10
-  root = klynge.klynge
-  klynger = {}
-  klynger[root] = klynge
-  klynge.children = firstBranch
-  nodes = []
-  initDraw()
-  update()
-
-menuItems = #{{{2
-  "0":
-    x: -menuSize * 1.2
-    y: menuSize * .2
-    fn: clear
-  "-":
-    x: -menuSize * .8
-    y: -menuSize * .8
-    fn: decrease
-  "p":
-    x: boxSize/2 - menuSize/2
-    y: -menuSize * 1.2
-    fn: pin
-  "+":
-    x: boxSize - menuSize * .2
-    y: -menuSize * .8
-    fn: increase
-  "*":
-    x: boxSize + menuSize * .2
-    y: menuSize * .2
-    fn: expand
-
-showMenuItems = -> #{{{2
-  return if !movingKlynge
-  for name, item of menuItems
-    ((name, item) ->
-      $div = $ "<div><div>#{name}</div></div>"
-      $div.addClass "bibgraphMenuItem"
-      $div.css
-        left: movingKlynge.x + item.x
-        top: movingKlynge.y + item.y
-        width: menuSize
-        height: menuSize
-      ($ "#graph").append $div
-      $div.on "mouseup", ->
-        item.fn(movingKlynge) if item.fn
-        console.log "enable", name
-      $div.on "mouseover", -> $div.addClass "active"
-      $div.on "mouseout", -> $div.removeClass "active"
-    )(name, item)
-
-  
-hideMenuItems = -> #{{{2
-  $(".bibgraphMenuItem").remove()
-  
-addMenu = ($elem, klynge) -> #{{{2
-  elem = $elem[0]
-  # TODO functions below should not be defined in the closure
-  elem.addEventListener "mousedown", (e) ->
-    return if movingKlynge
-    clickTime = Date.now()
-    e.preventDefault()
-    movingKlynge = klynge
-    $elem.addClass "active"
-    movingX0 = movingX = e.screenX
-    movingY0 = movingY = e.screenY
-    klynge.fixed = true
-    showMenuItems()
-    true
-
-stopMoving  = (e) -> #{{{2
   e.preventDefault()
-  hideMenuItems()
-  return if movingKlynge == undefined
-  console.log movingKlynge
-  movingKlynge.fixed = movingKlynge.pinned
-  ($ movingKlynge.div).removeClass "active"
-
-  dx = movingX - movingX0
-  dy = movingY - movingY0
-  increase(movingKlynge) if dx*dx + dy*dy < boxSize * boxSize / 4 and Date.now() - clickTime < 300
-
-  movingKlynge = undefined
   true
 
-movingMouseMove = (e) -> #{{{2
-  return if not movingKlynge
+doMove = (e, x, y) ->
+  console.log "move", $touched
+  return if !$touched
 
-  dx = movingX - movingX0
-  dy = movingY - movingY0
-  menuRadius = menuSize + boxSize * Math.sqrt(2)
-  hideMenuItems() if dx*dx + dy*dy > menuRadius*menuRadius
-  console.log "xxxx", dx*dx + dy*dy < boxSize * boxSize / 4 and Date.now() - clickTime < 1000
-
-  klynge = movingKlynge
-  e.preventDefault()
-  dx = e.screenX - movingX
-  dy = e.screenY - movingY
-  klynge.x += dx
-  klynge.y += dy
-  klynge.px += dx
-  klynge.py += dy
-  movingX += dx
-  movingY += dy
+  touchedKlynge.px = px0 + x - x0
+  touchedKlynge.py = py0 + y - y0
   force.start()
+
+  e.preventDefault()
   true
 
-$ -> # Bind events {{{2
-  window.addEventListener "mousemove", movingMouseMove
-  window.addEventListener "mouseup", stopMoving
-  window.addEventListener "mouseleave", stopMoving
+doEnd = (e, x, y) ->
+  console.log "end", $touched
+  return if !$touched
+
+  dx = x - x0
+  dy = y - y0
+  dist = Math.sqrt(dx*dx + dy*dy)
+
+  console.log dist, boxSize, startTime, Date.now()
+
+  if wasPinned and dist < boxSize and (startTime + 500) > Date.now()
+    pinned[touchedKlynge.klynge] = false
+    touchedKlynge.fixed = false
+    $touched.removeClass "pinned"
+
+  $touched = undefined
+
+  e.preventDefault()
+  true
+
+handleTouch = ($elem, klynge) ->
+  $elem.on "mousedown", (e) -> doStart e, $elem, klynge, e.screenX, e.screenY
+
+$ ->
+  ($ window).on "mouseup", (e) -> doEnd e, e.screenX, e.screenY
+  ($ window).on "mousemove", (e) -> doMove e, e.screenX, e.screenY
 
 # Draw graph {{{1
 #
 ctx = undefined
 canvas = undefined
-edges = []
 force = undefined
 
 initDraw = -> #{{{2
@@ -207,12 +121,14 @@ initDraw = -> #{{{2
 
 
 draw = -> #{{{2
+
   # Create divs for nodes {{{3
   for klynge in nodes
     if klynge.title and not klynge.div
       klynge.title = "" + klynge.title
       $div = $ "<div>" + klynge.title + "</div>"
       $div.addClass "bibgraphBox"
+      $div.addClass "pinned" if pinned[klynge.klynge]
       $div.data "klynge", klynge
       $div.css
         width: boxSize - 2*boxPadding
@@ -220,10 +136,11 @@ draw = -> #{{{2
         padding: boxPadding
         borderRadius: boxPadding
       $("#graph").append $div
+
   
       # Scale font to fit each box {{{3
       size = 12
-      addMenu $div, klynge
+      handleTouch $div, klynge
       while $div.height() > boxSize and size > 8
         --size
         $div.css {fontSize: size}
@@ -278,7 +195,7 @@ klyngeWalk = (klyngeId, n, callback, done, salt, acc) -> #{{{2
     for i in [0..30]
       branch = qp.pick acc.arr, hash
       klyngeId = branch.klynge
-      for child in branch.adhl
+      if branch.adhl then for child in branch.adhl
         if !acc.added[child.klynge]
           console.log klyngeId, child.klynge, acc.added
           acc.links.push [klyngeId, child.klynge]
@@ -287,6 +204,7 @@ klyngeWalk = (klyngeId, n, callback, done, salt, acc) -> #{{{2
     done acc.arr, acc.links
 
 loadKlynge = (klyngeId, callback)  -> #{{{2
+  console.log "loadKlynge", klyngeId
   if klynger[klyngeId]
     return callback klynger[klyngeId]
 
@@ -329,8 +247,11 @@ update = -> #{{{2
             localLinks.push [node.klynge, child.klynge]
     links = makeLinks localLinks
     draw()
-  klyngeWalk root, 50, handleResult, handleResult
+  for klyngeId, isPinned of pinned
+    console.log klyngeId, isPinned
+    (klyngeWalk klyngeId, walkDepth, handleResult, handleResult) if isPinned
 
+# Runner {{{1
 requestKlynge = (klyngeId) -> #{{{2
   if klynger[klyngeId]
     klynge = klynger[klyngeId]
@@ -340,45 +261,11 @@ requestKlynge = (klyngeId) -> #{{{2
   return if graphLoading
   graphLoading = true
   loadKlynge klyngeId, (klynge) ->
-    if recur > 0
-      klynge.children = eachBranch
-      --recur
-    else
-      klynge.children = 0
+    klynge.children = 0
     graphLoading = false
     update()
 
-update = -> #{{{2
-  i = 0
-  for _, klynge of klynger
-    klynge.added = false
-  nodes = [klynger[root]]
-  klynger[root].added = true
-  links = []
-  while i < nodes.length
-    klynge = nodes[i]
-    if klynge.adhl
-      children = klynge.adhl.slice 0, klynge.children || 0
-      for child in children
-        requestKlynge child.klynge
-    ++i
-
-  for klynge in nodes
-    full = true
-    if klynge.adhl
-      for child in klynge.adhl.slice 0, (klynge.children || 0) + backlinks
-        child = klynger[child.klynge]
-        if child?.added
-          links.push
-            source: klynge
-            target: child
-        else
-          full = false
-  for _, klynge of klynger
-    klynge.children = 0 if !klynge.added
-  draw()
-
-$ -> #{{{1
+$ ->
   search = () -> #{{{2
     nodesOld = []
     requestKlyngeOld = (klyngeId, done) ->
@@ -417,11 +304,9 @@ $ -> #{{{1
           for klynge in nodesOld
             if max.count <= klynge.count
               max = klynge
-          nodesOld = [max]
-          console.log "root:", max
           initDraw()
-          root = max.klynge
-          requestKlynge root
+          pinned[max.klynge] = true
+          update()
   
   # Handle seach request and location.hash {{{2
   
