@@ -1,26 +1,8 @@
-.bibgraphMenuItem {
-    position: absolute;
-    background-color: rgba(120,150,100,0.65);
-    border-radius: 500px;
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
-    text-align: center;
-    font: 24px sans-serif;
-}
-.bibgraphMenuItem div{
-    padding-top: 6px;
-}
-.bibgraphMenuItem.active {
-    margin-top: 2px;
-    margin-left: 2px;
-    background-color: rgba(120,150,100,0.95);
-    box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
-    text-shadow: 0px 0px 10px rgba(255,255,150,1);
-}
 .bibgraphBox {
     position: absolute;
     font: 100px sans serif;
     text-align: center;
-    background-color: rgba(255,255,255,0.65);
+    background-color: rgba(255,255,255,0.80);
     hyphens: auto;
     -moz-hyphens: auto;
     -webkit-hyphens: auto;
@@ -34,4 +16,12 @@
 }
 .bibgraphBox.pinned {
     border: 1px solid black;
+}
+.bibgraphRequest {
+    display: none;
+}
+.bibgraphEnabled {
+}
+.bibgraphDisabled {
+    display: none;
 }

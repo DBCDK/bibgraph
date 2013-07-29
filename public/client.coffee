@@ -1,6 +1,6 @@
 boxSize = 60
 boxPadding = 4
-walkDepth = 80
+walkDepth = 20
 
 klynger = {}
 nodes = []
@@ -23,13 +23,13 @@ qp.hashColorLight = (s) -> qp.intToColor 0xe0e0e0 | qp.prng 1 + qp.strHash s
 qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strHash s
 qp.log = (args...) -> qp._log? document.title, args...
 qp.pick = (arr, seed) -> arr[Math.abs(qp.prng(seed)) % arr.length]
+qp.startsWith = (str, match) -> str.slice(0, match.length) == match
 
 # Handle mouse/touch {{{1
 
 wasPinned = px0 = py0 = x0 = y0 = startTime = $touched = touchedKlynge = undefined
 
 doStart = (e, $elem, klynge, x, y) ->
-  console.log "start", $touched
   return if $touched
   touchedKlynge = klynge
   px0 = touchedKlynge.px
@@ -48,7 +48,6 @@ doStart = (e, $elem, klynge, x, y) ->
   true
 
 doMove = (e, x, y) ->
-  console.log "move", $touched
   return if !$touched
 
   touchedKlynge.px = px0 + x - x0
@@ -59,14 +58,11 @@ doMove = (e, x, y) ->
   true
 
 doEnd = (e, x, y) ->
-  console.log "end", $touched
   return if !$touched
 
   dx = x - x0
   dy = y - y0
   dist = Math.sqrt(dx*dx + dy*dy)
-
-  console.log dist, boxSize, startTime, Date.now()
 
   if wasPinned and dist < boxSize and (startTime + 500) > Date.now()
     pinned[touchedKlynge.klynge] = false
@@ -82,6 +78,7 @@ handleTouch = ($elem, klynge) ->
   $elem.on "mousedown", (e) -> doStart e, $elem, klynge, e.screenX, e.screenY
 
 $ ->
+  ($ window).on "click", (e) -> console.log "click"
   ($ window).on "mouseup", (e) -> doEnd e, e.screenX, e.screenY
   ($ window).on "mousemove", (e) -> doMove e, e.screenX, e.screenY
 
@@ -197,14 +194,12 @@ klyngeWalk = (klyngeId, n, callback, done, salt, acc) -> #{{{2
       klyngeId = branch.klynge
       if branch.adhl then for child in branch.adhl
         if !acc.added[child.klynge]
-          console.log klyngeId, child.klynge, acc.added
           acc.links.push [klyngeId, child.klynge]
           return klyngeWalk child.klynge, n - 1, callback, done, salt, acc
       hash = qp.prng hash
     done acc.arr, acc.links
 
 loadKlynge = (klyngeId, callback)  -> #{{{2
-  console.log "loadKlynge", klyngeId
   if klynger[klyngeId]
     return callback klynger[klyngeId]
 
@@ -248,72 +243,46 @@ update = -> #{{{2
     links = makeLinks localLinks
     draw()
   for klyngeId, isPinned of pinned
-    console.log klyngeId, isPinned
     (klyngeWalk klyngeId, walkDepth, handleResult, handleResult) if isPinned
 
 # Runner {{{1
-requestKlynge = (klyngeId) -> #{{{2
-  if klynger[klyngeId]
-    klynge = klynger[klyngeId]
-    nodes.push klynge if !klynge.added
-    klynge.added = true
-    return
-  return if graphLoading
-  graphLoading = true
-  loadKlynge klyngeId, (klynge) ->
-    klynge.children = 0
-    graphLoading = false
-    update()
+# new {{{2
+window.bibgraph = {}
+bibgraph.start = (klyngeId) ->
+  console.log location.hash, location.hash == ""
+  if (location.hash == "") or (qp.startsWith location.hash, "#bibgraph:")
+    location.hash = "#bibgraph:" + klyngeId
+  initDraw()
+  pinned[klyngeId] = true
+  update()
 
-$ ->
-  search = () -> #{{{2
-    nodesOld = []
-    requestKlyngeOld = (klyngeId, done) ->
-      $.get "klynge/" + klyngeId, (klynge) ->
-        return done?() if not klynge.faust
-        nodesOld.push klynge
-        klynge.adhl?.sort (a, b) ->
-          b.count*b.count/b.klyngeCount - a.count*a.count/a.klyngeCount
-        $.get "faust/" + klynge.faust[0], (faust) ->
-          klynge.title = faust.title
-          nodesOld = nodesOld.filter (klynge) -> klynge.adhl
-          done?()
-    
-    query = ($ "#query")
-      .css({display: "none"})
-      .val()
-    location.hash = query
-  
-    # Send search query to web service
-    $.get "search/" + query, (result) ->
-      ($ "#query")
-        .css({display: "inline"})
-        .val("")
-  
-      # Lookup each of the result
-      async.map result, (faust, done) ->
-          $.get "faust/" + faust, (faust) ->
-            if faust?.klynge
-              requestKlyngeOld faust?.klynge, done
-            else
-              done()
-  
-        # ÷÷÷÷Discard all but the most popular result
-        , ->
-          max = {count: 0}
-          for klynge in nodesOld
-            if max.count <= klynge.count
-              max = klynge
-          initDraw()
-          pinned[max.klynge] = true
-          update()
-  
-  # Handle seach request and location.hash {{{2
-  
-  ($ "#search").on "submit", ->
-    search()
-    false
-  if location.hash
-    ($ "#query").val location.hash.slice(1)
-    search()
-  ($ "#search").focus()
+titleCache = {}
+bibgraph.boxContent = (elem, fausts) ->
+  faust = fausts[0]
+  title = titleCache[faust]
+  if title != undefined
+    return elem.innerHTML = "<span>#{title}</span>"
+
+  $.get ("faust/" + faust), (obj) ->
+    title = obj.title
+    titleCache[faust] = title
+    elem.innerHTML = "<span>#{title}</span>"
+
+bibgraph.update = ->
+  ($ ".bibgraphRequest").each ->
+    $elem = $ this
+
+    if ! $elem.hasClass "bibgraphRequestLoading"
+      $elem.addClass "bibgraphRequestLoading"
+      $.get ("faust/" + $elem.data "faust"), (faust) ->
+        $.get ("klynge/" + faust.klynge), (klynge) ->
+          $elem.removeClass "bibgraphRequestLoading"
+          $elem.removeClass "bibgraphRequest"
+          if klynge?.adhl
+            $elem.addClass "bibgraphEnabled"
+            $elem.on "mousedown", -> bibgraph.start faust.klynge
+            $elem.on "touchstart", -> bibgraph.start faust.klynge
+          else
+            $elem.addClass "bibgraphDisabled"
+
+$ bibgraph.update
