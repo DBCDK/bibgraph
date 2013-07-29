@@ -196,10 +196,12 @@
       top: 0,
       left: 0
     });
-    $canvas.on("click", function(e) {
-      return bibgraph.close();
-    });
-    handleMove($canvas);
+    setTimeout((function() {
+      $canvas.on("click", function(e) {
+        return bibgraph.close();
+      });
+      return handleMove($canvas);
+    }), 500);
     w = window.innerWidth;
     h = window.innerHeight;
     ctx.width = canvas.width = w;
@@ -295,7 +297,10 @@
           acc.startSpread--;
         }
         p = qp.prng01();
-        pos = p * p * p * p * branch.adhl.length | 0;
+        p *= p;
+        p *= p;
+        p *= p;
+        pos = p * branch.adhl.length | 0;
         console.log(pos);
         if (branch.adhl) {
           _ref1 = branch.adhl.slice(pos);
@@ -445,6 +450,7 @@
     faust = fausts[0];
     title = titleCache[faust];
     elem.innerHTML = "?";
+    elem.style.color = qp.hashColorDark(faust);
     if (title !== void 0) {
       return elem.innerHTML = "<span>" + title + "</span>";
     }

@@ -134,8 +134,9 @@ initDraw = -> #{{{2
     left: 0
 
 
-  $canvas.on "click", (e) -> bibgraph.close()
-  handleMove $canvas
+  setTimeout (->
+    $canvas.on "click", (e) -> bibgraph.close()
+    handleMove $canvas), 500
 
   # Resize canvas {{{3
   w = window.innerWidth
@@ -208,7 +209,10 @@ klyngeWalk = (klyngeId, n, callback, done, acc) -> #{{{2
         acc.startSpread--
 
       p = qp.prng01()
-      pos =p*p*p*p * branch.adhl.length | 0
+      p *= p
+      p *= p
+      p *= p
+      pos = p * branch.adhl.length | 0
       console.log pos
       if branch.adhl then for child in branch.adhl.slice(pos)
         if !acc.added[child.klynge] and !acc.skip[child.klynge]
@@ -299,6 +303,7 @@ bibgraph.boxContent = (elem, fausts) ->
   faust = fausts[0]
   title = titleCache[faust]
   elem.innerHTML = "?"
+  elem.style.color = qp.hashColorDark faust
   if title != undefined
     return elem.innerHTML = "<span>#{title}</span>"
 
