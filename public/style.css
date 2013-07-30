@@ -17,6 +17,7 @@
     -ms-hyphens: auto;
     overflow: hidden;
     box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 .bibgraphBox.active {
     background-color: rgba(245,255,235,0.95);

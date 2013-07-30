@@ -7,8 +7,6 @@ Work in progress
 # Roadmap
 
 - disable for ie8 and older (works with ie9+)
-- touch-events
-- pinned initial book
 - better landing/info-page
     - bibdk serach box
     - exmaples
@@ -17,6 +15,11 @@ Work in progress
     - documentation
     - layout via bootstrap
 - encode expansions+fixedPoss in hash if not used for anything else
+
+- later
+    - multitouch
+    - about-text 
+    - open selected in bibliotek.dk
 
 ## Done
 - weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up
@@ -38,6 +41,9 @@ Work in progress
         - one seed generates seeds for each bucket, and and bucket elements generated one bucket at a time - in order, same element allowed in multible buckets, but only yields one box
         - probability for low-probability co-loans to avoid getting stuck in local cluster
 
+- touch-events
+- move div, in addition to update graph coordinates
+- pinned initial book
 # Running:
 
 Requires copy of the data `adhl.json` to run. (`adhl.json` contains one json per line, either `["faust", faust, klynge]` mapping between faust numbers and klynger, or `["adhl", klynge1, [[klynge1, count], [klynge2, count], ...]]` with the number of coloans for each klynge.

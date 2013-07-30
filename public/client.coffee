@@ -60,7 +60,8 @@ bibgraph.close = (klyngeId) -> #{{{2
 wasPinned = px0 = py0 = x0 = y0 = startTime = $touched = touchedKlynge = undefined
 
 doStart = (e, $elem, klynge, x, y) ->
-  return if $touched
+  e.preventDefault()
+  return true if $touched
   touchedKlynge = klynge
   px0 = touchedKlynge.px
   py0 = touchedKlynge.py
@@ -73,23 +74,26 @@ doStart = (e, $elem, klynge, x, y) ->
   wasPinned = pinned[touchedKlynge.klynge]
   pinned[touchedKlynge.klynge] = true
   touchedKlynge.fixed = true
-  update() if !wasPinned
+  qp.nextTick -> update() if !wasPinned
 
-  e.preventDefault()
   true
 
 doMove = (e, x, y) ->
-  return if !$touched
+  e.preventDefault()
+  return true if !$touched
 
   touchedKlynge.px = px0 + x - x0
   touchedKlynge.py = py0 + y - y0
-  force.start()
+  $touched.css
+    left: touchedKlynge.px
+    top: touchedKlynge.py
+  qp.nextTick -> force.start()
 
-  e.preventDefault()
   true
 
 doEnd = (e, x, y) ->
-  return if !$touched
+  e.preventDefault()
+  return true if !$touched
 
   dx = x - x0
   dy = y - y0
@@ -103,15 +107,22 @@ doEnd = (e, x, y) ->
 
   $touched = undefined
 
-  e.preventDefault()
   true
 
 handleMove = ($elem) ->
   $elem.on "mouseup", (e) -> doEnd e, e.screenX, e.screenY
   $elem.on "mousemove", (e) -> doMove e, e.screenX, e.screenY
+  $elem[0].addEventListener 'touchmove', (e) ->
+    doMove e, klynge, e.touches[0].screenX, e.touches[0].screenY
+  $elem[0].addEventListener 'touchend', (e) ->
+    doEnd e, klynge, e.touches[0].screenX, e.touches[0].screenY
+
 handleTouch = ($elem, klynge) ->
   handleMove $elem
-  $elem.on "mousedown", (e) -> doStart e, $elem, klynge, e.screenX, e.screenY
+  $elem.on "mousedown", (e) ->
+    doStart e, $elem, klynge, e.screenX, e.screenY
+  $elem[0].addEventListener 'touchstart', (e) ->
+    doStart e, $elem, klynge, e.touches[0].screenX, e.touches[0].screenY
 
 # Draw graph {{{1
 #
@@ -338,8 +349,14 @@ bibgraph.update = -> #{{{2
             {x: pos.left - ($ window).scrollLeft(), y: pos.top - ($ window).scrollTop()}
           if klynge?.adhl
             $elem.addClass "bibgraphEnabled"
-            $elem.on "mousedown", -> bibgraph.open faust.klynge, calcPos()
-            $elem.on "touchstart", -> bibgraph.open faust.klynge, calcPos()
+            $elem.on "mousedown", (e) ->
+              bibgraph.open faust.klynge, calcPos()
+              e.preventDefault()
+              true
+            $elem.on "touchstart", (e) ->
+              bibgraph.open faust.klynge, calcPos()
+              e.preventDefault()
+              true
           else
             $elem.addClass "bibgraphDisabled"
 

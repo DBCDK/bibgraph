@@ -112,8 +112,9 @@
   wasPinned = px0 = py0 = x0 = y0 = startTime = $touched = touchedKlynge = void 0;
 
   doStart = function(e, $elem, klynge, x, y) {
+    e.preventDefault();
     if ($touched) {
-      return;
+      return true;
     }
     touchedKlynge = klynge;
     px0 = touchedKlynge.px;
@@ -126,29 +127,37 @@
     wasPinned = pinned[touchedKlynge.klynge];
     pinned[touchedKlynge.klynge] = true;
     touchedKlynge.fixed = true;
-    if (!wasPinned) {
-      update();
-    }
-    e.preventDefault();
+    qp.nextTick(function() {
+      if (!wasPinned) {
+        return update();
+      }
+    });
     return true;
   };
 
   doMove = function(e, x, y) {
+    e.preventDefault();
     if (!$touched) {
-      return;
+      return true;
     }
     touchedKlynge.px = px0 + x - x0;
     touchedKlynge.py = py0 + y - y0;
-    force.start();
-    e.preventDefault();
+    $touched.css({
+      left: touchedKlynge.px,
+      top: touchedKlynge.py
+    });
+    qp.nextTick(function() {
+      return force.start();
+    });
     return true;
   };
 
   doEnd = function(e, x, y) {
     var dist, dx, dy;
 
+    e.preventDefault();
     if (!$touched) {
-      return;
+      return true;
     }
     dx = x - x0;
     dy = y - y0;
@@ -160,7 +169,6 @@
       update();
     }
     $touched = void 0;
-    e.preventDefault();
     return true;
   };
 
@@ -168,15 +176,24 @@
     $elem.on("mouseup", function(e) {
       return doEnd(e, e.screenX, e.screenY);
     });
-    return $elem.on("mousemove", function(e) {
+    $elem.on("mousemove", function(e) {
       return doMove(e, e.screenX, e.screenY);
+    });
+    $elem[0].addEventListener('touchmove', function(e) {
+      return doMove(e, klynge, e.touches[0].screenX, e.touches[0].screenY);
+    });
+    return $elem[0].addEventListener('touchend', function(e) {
+      return doEnd(e, klynge, e.touches[0].screenX, e.touches[0].screenY);
     });
   };
 
   handleTouch = function($elem, klynge) {
     handleMove($elem);
-    return $elem.on("mousedown", function(e) {
+    $elem.on("mousedown", function(e) {
       return doStart(e, $elem, klynge, e.screenX, e.screenY);
+    });
+    return $elem[0].addEventListener('touchstart', function(e) {
+      return doStart(e, $elem, klynge, e.touches[0].screenX, e.touches[0].screenY);
     });
   };
 
@@ -509,11 +526,15 @@
             };
             if (klynge != null ? klynge.adhl : void 0) {
               $elem.addClass("bibgraphEnabled");
-              $elem.on("mousedown", function() {
-                return bibgraph.open(faust.klynge, calcPos());
+              $elem.on("mousedown", function(e) {
+                bibgraph.open(faust.klynge, calcPos());
+                e.preventDefault();
+                return true;
               });
-              return $elem.on("touchstart", function() {
-                return bibgraph.open(faust.klynge, calcPos());
+              return $elem.on("touchstart", function(e) {
+                bibgraph.open(faust.klynge, calcPos());
+                e.preventDefault();
+                return true;
               });
             } else {
               return $elem.addClass("bibgraphDisabled");
