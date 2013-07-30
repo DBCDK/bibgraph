@@ -73,13 +73,27 @@
     return str.slice(0, match.length) === match;
   };
 
-  bibgraph.open = function(klyngeId) {
+  qp.nextTick = function(fn) {
+    return setTimeout(fn, 0);
+  };
+
+  bibgraph.open = function(klyngeId, pos) {
     if ((location.hash === "") || (qp.startsWith(location.hash, "#bibgraph:"))) {
       location.hash = "#bibgraph:" + klyngeId;
     }
-    initDraw();
-    pinned[klyngeId] = true;
-    return update();
+    qp.nextTick(function() {
+      return loadKlynge(klyngeId, function(klynge) {
+        window.blah = klynge;
+        klynge.x = pos.x;
+        klynge.y = pos.y;
+        klynge.px = pos.x;
+        klynge.py = pos.y;
+        klynge.fixed = true;
+        pinned[klyngeId] = true;
+        return update();
+      });
+    });
+    return initDraw();
   };
 
   bibgraph.close = function(klyngeId) {
@@ -88,7 +102,7 @@
     $("#bibgraphGraph").remove();
     for (_ in klynger) {
       klynge = klynger[_];
-      klynge.div = void 0;
+      klynge.fixed = klynge.div = klynge.pinned = void 0;
     }
     nodes = [];
     links = [];
@@ -480,15 +494,26 @@
         $elem.addClass("bibgraphRequestLoading");
         return $.get("faust/" + $elem.data("faust"), function(faust) {
           return $.get("klynge/" + faust.klynge, function(klynge) {
+            var calcPos;
+
             $elem.removeClass("bibgraphRequestLoading");
             $elem.removeClass("bibgraphRequest");
+            calcPos = function() {
+              var pos;
+
+              pos = $elem.offset();
+              return {
+                x: pos.left - ($(window)).scrollLeft(),
+                y: pos.top - ($(window)).scrollTop()
+              };
+            };
             if (klynge != null ? klynge.adhl : void 0) {
               $elem.addClass("bibgraphEnabled");
               $elem.on("mousedown", function() {
-                return bibgraph.open(faust.klynge);
+                return bibgraph.open(faust.klynge, calcPos());
               });
               return $elem.on("touchstart", function() {
-                return bibgraph.open(faust.klynge);
+                return bibgraph.open(faust.klynge, calcPos());
               });
             } else {
               return $elem.addClass("bibgraphDisabled");

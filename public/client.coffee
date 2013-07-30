@@ -29,20 +29,28 @@ qp.hashColorDark = (s) -> qp.intToColor 0x7f7f7f & qp.prng qp.strHash s
 qp.log = (args...) -> qp._log? document.title, args...
 qp.pick = (arr, seed) -> arr[Math.abs(qp.prng(seed)) % arr.length]
 qp.startsWith = (str, match) -> str.slice(0, match.length) == match
+qp.nextTick = (fn) -> setTimeout fn, 0
 
 # Entry/exit point {{{1
 
-bibgraph.open = (klyngeId) -> #{{{2
+bibgraph.open = (klyngeId, pos) -> #{{{2
   if (location.hash == "") or (qp.startsWith location.hash, "#bibgraph:")
     location.hash = "#bibgraph:" + klyngeId
+  qp.nextTick -> loadKlynge klyngeId, (klynge) ->
+    window.blah = klynge
+    klynge.x = pos.x
+    klynge.y = pos.y
+    klynge.px = pos.x
+    klynge.py = pos.y
+    klynge.fixed = true
+    pinned[klyngeId] = true
+    update()
   initDraw()
-  pinned[klyngeId] = true
-  update()
 
 bibgraph.close = (klyngeId) -> #{{{2
   $("#bibgraphGraph").remove()
   for _, klynge of klynger
-    klynge.div = undefined 
+    klynge.fixed = klynge.div = klynge.pinned = undefined
   nodes = []
   links = []
   pinned = {}
@@ -325,10 +333,13 @@ bibgraph.update = -> #{{{2
         $.get ("klynge/" + faust.klynge), (klynge) ->
           $elem.removeClass "bibgraphRequestLoading"
           $elem.removeClass "bibgraphRequest"
+          calcPos = ->
+            pos = $elem.offset()
+            {x: pos.left - ($ window).scrollLeft(), y: pos.top - ($ window).scrollTop()}
           if klynge?.adhl
             $elem.addClass "bibgraphEnabled"
-            $elem.on "mousedown", -> bibgraph.open faust.klynge
-            $elem.on "touchstart", -> bibgraph.open faust.klynge
+            $elem.on "mousedown", -> bibgraph.open faust.klynge, calcPos()
+            $elem.on "touchstart", -> bibgraph.open faust.klynge, calcPos()
           else
             $elem.addClass "bibgraphDisabled"
 
