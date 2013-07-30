@@ -6,19 +6,17 @@ Work in progress
 
 # Roadmap
 
-- embeddable code
-- close visualisation on background click
-- replace menu with:
-    - pinned position when dragged
-    - unpinned when clicked
-    - generate graph based on pinned elements (size `k*sqrt(w*h)*log(numPinned)`)
-    - later: ghosts from recently unpinned elements
-- better traversal, starting in pinned elements
-    - perhaps deterministic random, with separate bucket of nodes per pinned, and picked random from that
-        - one seed generates seeds for each bucket, and and bucket elements generated one bucket at a time - in order, same element allowed in multible buckets, but only yields one box
-    - expand node with certain deterministic probability, ie. each potential node put into large number of buckets, and then empty buckets in same permuted order. Ie. assign (salted) hashed number for each possible expand klyngeId, keep taking the one with the lowest number.
+- disable for ie8 and older (works with ie9+)
+- touch-events
+- pinned initial book
+- better landing/info-page
+    - bibdk serach box
+    - exmaples
+    - introduction to the project
+    - features
+    - documentation
+    - layout via bootstrap
 - encode expansions+fixedPoss in hash if not used for anything else
-- mouse-handler-abstraction for touch
 
 ## Done
 - weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up
@@ -27,8 +25,18 @@ Work in progress
 - better line drawing
 - pinnable
 - popup menu
+- embeddable code
+- replace menu with:
+    - pinned position when dragged
+    - unpinned when clicked
+    - generate graph based on pinned elements 
 - dynamic update of graph
 - make it work in other than webkit
+- close visualisation on background click
+- better traversal, starting in pinned elements
+    - perhaps deterministic random, with separate bucket of nodes per pinned, and picked random from that
+        - one seed generates seeds for each bucket, and and bucket elements generated one bucket at a time - in order, same element allowed in multible buckets, but only yields one box
+        - probability for low-probability co-loans to avoid getting stuck in local cluster
 
 # Running:
 

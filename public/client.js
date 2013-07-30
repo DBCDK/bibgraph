@@ -74,7 +74,6 @@
   };
 
   bibgraph.open = function(klyngeId) {
-    console.log(location.hash, location.hash === "");
     if ((location.hash === "") || (qp.startsWith(location.hash, "#bibgraph:"))) {
       location.hash = "#bibgraph:" + klyngeId;
     }
@@ -278,7 +277,7 @@
       };
     }
     return loadKlynge(klyngeId, function(klynge) {
-      var branch, child, hash, i, p, pos, _i, _j, _len, _ref, _ref1;
+      var branch, child, hash, i, p, _i, _j, _len, _ref, _ref1;
 
       if (klynge.klynge) {
         acc.arr.push(klynge);
@@ -300,10 +299,8 @@
         p *= p;
         p *= p;
         p *= p;
-        pos = p * branch.adhl.length | 0;
-        console.log(pos);
         if (branch.adhl) {
-          _ref1 = branch.adhl.slice(pos);
+          _ref1 = branch.adhl.slice(p * branch.adhl.length | 0);
           for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
             child = _ref1[_j];
             if (!acc.added[child.klynge] && !acc.skip[child.klynge]) {
@@ -436,7 +433,7 @@
       return bibgraph.close();
     }
     depth = walkDepth / Math.log(toWalk.length + 1.7);
-    console.log(depth);
+    qp.log(toWalk);
     return async.map(toWalk, (function(id, done) {
       return klyngeWalk(id, depth, handleResult, done);
     }), done);

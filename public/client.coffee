@@ -33,7 +33,6 @@ qp.startsWith = (str, match) -> str.slice(0, match.length) == match
 # Entry/exit point {{{1
 
 bibgraph.open = (klyngeId) -> #{{{2
-  console.log location.hash, location.hash == ""
   if (location.hash == "") or (qp.startsWith location.hash, "#bibgraph:")
     location.hash = "#bibgraph:" + klyngeId
   initDraw()
@@ -208,13 +207,8 @@ klyngeWalk = (klyngeId, n, callback, done, acc) -> #{{{2
         branch = acc.arr[0]
         acc.startSpread--
 
-      p = qp.prng01()
-      p *= p
-      p *= p
-      p *= p
-      pos = p * branch.adhl.length | 0
-      console.log pos
-      if branch.adhl then for child in branch.adhl.slice(pos)
+      p = qp.prng01(); p*=p; p*=p; p*=p
+      if branch.adhl then for child in branch.adhl.slice(p * branch.adhl.length | 0)
         if !acc.added[child.klynge] and !acc.skip[child.klynge]
           branch.children[child.klynge] = true
           acc.prev = branch.klynge
@@ -292,7 +286,7 @@ update = -> #{{{2
 
   return bibgraph.close() if !toWalk.length
   depth = walkDepth / Math.log (toWalk.length + 1.7)
-  console.log depth
+  qp.log toWalk
 
   async.map toWalk, ((id, done) -> klyngeWalk id, depth, handleResult, done), done
 
