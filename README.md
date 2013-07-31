@@ -6,20 +6,19 @@ Work in progress
 
 # Roadmap
 
-- disable for ie8 and older (works with ie9+)
 - better landing/info-page
-    - bibdk serach box
-    - exmaples
+    - bibdk search box
+    - examples
     - introduction to the project
     - features
     - documentation
     - layout via bootstrap
-- encode expansions+fixedPoss in hash if not used for anything else
 
-- later
-    - multitouch
-    - about-text 
-    - open selected in bibliotek.dk
+- disable for ie8 and older (works with ie9+)
+- encode expansions+fixedPoss in hash if not used for anything else
+- multitouch
+- about-text 
+- open selected in bibliotek.dk
 
 ## Done
 - weight links by `P(A|B)P(B|A)` instead of just `P(A|B)`, to avoid popular unrelated books pop up

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
         <title>BibGraph</title>
+        <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+        <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <script src="lib/d3.v3.js"></script>
-        <script src="lib/jquery-1.10.2.js"></script>
-        <script src="lib/async.js"></script>
         <meta name="HandheldFriendly" content="True">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
         <meta name="format-detection" content="telephone=no">
@@ -16,58 +16,69 @@
         <!--link rel="apple-touch-icon-precomposed" href="icon.png">
         <link rel="icon" type="image/png" href="icon.png">
         <link rel="shortcut icon" href="icon.png"-->
-        <script>document.write('<script src="client.js?'+Math.random()+'"><'+'/script>')</script>
     </head>
     <body>
-        <div>
-            <form id="search">
-                Bibliotek.dk kommandosøgning:
-                <input type="search" id="query">
-                <input type="submit" value="Søg">
-            </form>
-            <div id="searchResults">
-            </div>
-            <script>
-                $(search).on("submit", function() {
-                    $(searchResults)[0].innerHTML = "Searching..."
+        <h1>BibGraph <small>- visualisering af biblioteksmaterialer ud fra ADHL-data</small></h1>
+        <hr>
 
-                    $.get("search/" + $("#query").val(), function(results) {
-                        $(searchResults).empty()
-                        for(var i = 0; i < results.length; ++i) {
-                            (function(faust){
-                                $.get("faust/" + faust, function(obj) {
-                                    if(obj.title) {
-                                        $(searchResults).append($('<div>' + obj.title + 
-                                            ' <button class="bibgraphRequest" data-faust="' + faust + '">BibGraph</button></div>'));
-                                        setTimeout(function(){bibgraph.update()}, 0);
-                                    }
-                            })})(results[i]);
-                        }
-                    });
-                    return false;
+        <div class="row">
+            <div class="span6">
+                <form id="search">
+                    Bibliotek.dk kommandosøgning:
+                    <input type="search" id="query">
+                    <input type="submit" value="Søg">
+                </form>
+                <div id="searchResults">
+                </div>
+            </div>
+            <div class="span6">
+                <h2>Eksempler på faust-numre med adhl-data</h2>
+                <ul>
+                    <li>Possession <button class="bibgraphRequest" data-faust="24931773">BibGraph</button></li>
+                    <li>Netop gentagelsen er det smukke : samtaler om cykling<button class="bibgraphRequest" data-faust="29339570">BibGraph</button></li>
+                    <li>Vi unge : kun for piger<button class="bibgraphRequest" data-faust="02231336">BibGraph</button></li>
+                    <li>Mission til flunkernes planet<button class="bibgraphRequest" data-faust="23677105">BibGraph</button></li>
+                    <li>High fidelity <button class="bibgraphRequest" data-faust="06550347">BibGraph</button></li>
+                    <li>Bj&#248;rne br&#248;dre 2 = Brother Bear 2 <button class="bibgraphRequest" data-faust="26451833">BibGraph</button></li>
+                    <li>Lasten : krimi <button class="bibgraphRequest" data-faust="28540361">BibGraph</button></li>
+                    <li>Tragedien om Richard 3 <button class="bibgraphRequest" data-faust="8758302220">BibGraph</button></li>
+                    <li>Sort poesi : farvepoesien <button class="bibgraphRequest" data-faust="06060706">BibGraph</button></li>
+                    <li>Jazz/Jones <button class="bibgraphRequest" data-faust="03123456">BibGraph</button></li>
+                    <li>MGP greatest 2001, 2002, 2003<button class="bibgraphRequest" data-faust="24936422">BibGraph</button></li>
+                    <li>Dinosaurens fjer : roman<button class="bibgraphRequest" data-faust="27392601">BibGraph</button></li>
+                    <li>Faust without ADHL data<button class="bibgraphRequest" data-faust="1234">BibGraph</button></li>
+                    <li>The blind side<button class="bibgraphRequest" data-faust="28257589">BibGraph</button></li>
+                    <li>Dirty diamonds<button class="bibgraphRequest" data-faust="25823281">BibGraph</button></li>
+                </ul>
+            </div>
+        </div>
+        <script>
+            $(search).on("submit", function() {
+                $(searchResults)[0].innerHTML = "Searching..."
+
+                $.get("search/" + $("#query").val(), function(results) {
+                    $(searchResults).empty()
+                    for(var i = 0; i < results.length; ++i) {
+                        (function(faust){
+                            $.get("faust/" + faust, function(obj) {
+                                if(obj.title) {
+                                    $(searchResults).append($('<div>' + obj.title + 
+                                        ' <button class="bibgraphRequest" data-faust="' + faust + '">BibGraph</button></div>'));
+                                    setTimeout(function(){bibgraph.update()}, 0);
+                                }
+                        })})(results[i]);
+                    }
                 });
-            </script>
-        </div>
-        <div>
-            <h1>Eksempler på faust-numre med adhl-data</h1>
-            <ul>
-                <li>Possession <button class="bibgraphRequest" data-faust="24931773">BibGraph</button></li>
-                <li>Netop gentagelsen er det smukke : samtaler om cykling<button class="bibgraphRequest" data-faust="29339570">BibGraph</button></li>
-                <li>Vi unge : kun for piger<button class="bibgraphRequest" data-faust="02231336">BibGraph</button></li>
-                <li>Mission til flunkernes planet<button class="bibgraphRequest" data-faust="23677105">BibGraph</button></li>
-                <li>High fidelity <button class="bibgraphRequest" data-faust="06550347">BibGraph</button></li>
-                <li>Bj&#248;rne br&#248;dre 2 = Brother Bear 2 <button class="bibgraphRequest" data-faust="26451833">BibGraph</button></li>
-                <li>Lasten : krimi <button class="bibgraphRequest" data-faust="28540361">BibGraph</button></li>
-                <li>Tragedien om Richard 3 <button class="bibgraphRequest" data-faust="8758302220">BibGraph</button></li>
-                <li>Sort poesi : farvepoesien <button class="bibgraphRequest" data-faust="06060706">BibGraph</button></li>
-                <li>Jazz/Jones <button class="bibgraphRequest" data-faust="03123456">BibGraph</button></li>
-                <li>MGP greatest 2001, 2002, 2003<button class="bibgraphRequest" data-faust="24936422">BibGraph</button></li>
-                <li>Dinosaurens fjer : roman<button class="bibgraphRequest" data-faust="27392601">BibGraph</button></li>
-                <li>Faust without ADHL data<button class="bibgraphRequest" data-faust="1234">BibGraph</button></li>
-                <li>The blind side<button class="bibgraphRequest" data-faust="28257589">BibGraph</button></li>
-                <li>Dirty diamonds<button class="bibgraphRequest" data-faust="25823281">BibGraph</button></li>
-            </ul>
-        </div>
-        <script src="http://solsort.com/_logger.js"></script>
+                return false;
+            });
+        </script>
+        <script src="lib/jquery-1.10.2.js"></script>
+        <script src="lib/d3.v3.js"></script>
+        <script src="lib/async.js"></script>
+        <script>document.write('<'+'script src="client.js?'+Math.random()+'"><'+'/script>')</script>
+        <script>document.write('<'+'script src="http://solsort.com/_logger.js"><'+'/script>')</script>
+        <script src="bootstrap/js/bootstrap.js"></script>
     </body>
 </html>
+
+
