@@ -19,7 +19,7 @@ Afhængigheder installeres via:
     npm install
     pip install leveldb
 
-Databasen initialiseres med:
+Databasen initialiseres med følgende kommandoer, hvilket tager noget tid:
 
     scp guesstimate:~rje/adhl.json .
     python importdata.py
