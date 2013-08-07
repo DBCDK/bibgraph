@@ -59,6 +59,7 @@ Se `public/style.css` i dette repositorie for eksempel på hvorledes det kunne s
 - open selected in bibliotek.dk
 - touch-events bugfix
 - bundle, such that embedding wont need depencies such as d3. Ie. should be possible to add the functionality to a site by just including a single js + customise style.
+- remove debug/qp.log logging code
 
 ## Done
 - better landing/info-page
