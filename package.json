@@ -13,14 +13,15 @@
     "bibliographic",
     "REST"
   ],
-  "author": "Rasmus Erik",
-  "license": "BSD",
+  "author": "DBC A/S",
+  "license": "GPLv2 or later",
   "readmeFilename": "README.md",
   "dependencies": {
     "express": "~3.3.4",
     "levelup": "~0.10.0",
     "leveldown": "~0.6.2",
     "request": "~2.22.0",
-    "async": "~0.2.9"
+    "async": "~0.2.9",
+    "coffee-script": "~1.6.3"
   }
 }

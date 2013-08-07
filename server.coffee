@@ -30,7 +30,7 @@ search = (query, cb) ->
       cb err, result
       db.put "search:" + query, JSON.stringify result
 
-# Scrape bibliotek.dk {{{1
+# Get data from bibliotek.dk {{{1
 request = require "request"
 bibdkTitle = (faust, cb) ->
   console.log "req", faust

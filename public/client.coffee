@@ -47,7 +47,7 @@ bibgraph.open = (klyngeId, pos) -> #{{{2
     update()
   initDraw()
 
-bibgraph.close = (klyngeId) -> #{{{2
+bibgraph.close = () -> #{{{2
   $("#bibgraphGraph").remove()
   for _, klynge of klynger
     klynge.fixed = klynge.div = klynge.pinned = undefined
