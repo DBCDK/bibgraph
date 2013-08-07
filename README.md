@@ -7,12 +7,17 @@ Ikke brugbar uden udtræk DBCs ADHL-datasæt.
 
 # Installation
 
-Installationen forudsætter node.js `npm` og python `pip`, og kommandoerne herunder antager at man står i rodmappen i det udtjekkede `bibgraph`-repositorie.
+Installationen forudsætter node.js `npm` og python `pip`.
+
+Repositoriet tjekkes ud (de følgende kommandoer antager man står i den udtjekkede mappe).
+
+    git clone git@github.com:DBCDK/bibgraph.git
+    cd bibgraph
 
 Afhængigheder installeres via:
 
-    pip install leveldb
     npm install
+    pip install leveldb
 
 Databasen initialiseres med:
 
